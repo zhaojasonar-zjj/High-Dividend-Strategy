@@ -1,0 +1,5 @@
+# 截图和预览图
+*.png
+# 系统文件
+.DS_Store
+Thumbs.db
