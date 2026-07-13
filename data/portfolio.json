@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-13T14:39:17.597Z",
+  "savedAt": "2026-07-13T14:39:26.163Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -34,34 +34,6 @@
         }
       ]
     },
-    "luzhoulaojiao": {
-      "nextCheck": "下一次财报（关注渠道去库存进度）",
-      "rows": [
-        {
-          "date": "2026-07-9",
-          "event": "74.91元，静态股息率：泸州老窖>周大生，泸州老窖约=格力电器",
-          "prior": "50%",
-          "lr": 1,
-          "up": "20%",
-          "down": "10%",
-          "note": "股价越低，股息率越高，安全边际越高"
-        }
-      ]
-    },
-    "wuliangye": {
-      "nextCheck": "下一次财报",
-      "rows": [
-        {
-          "date": "2026-7-10",
-          "event": "73.69元，披露分红实施公告，7/16分红资金到账",
-          "prior": "50%",
-          "lr": "1",
-          "up": "20%",
-          "down": "15%",
-          "note": ""
-        }
-      ]
-    },
     "kelly": {
       "p": "0.6",
       "up": "0.3",
@@ -69,14 +41,10 @@
       "b": "2"
     },
     "stockNames": {
-      "zhoudasheng": "周大生",
-      "luzhoulaojiao": "泸州老窖",
-      "wuliangye": "五粮液"
+      "zhoudasheng": "周大生"
     },
     "stockOrder": [
-      "zhoudasheng",
-      "luzhoulaojiao",
-      "wuliangye"
+      "zhoudasheng"
     ]
   },
   "quoteCodes": [
