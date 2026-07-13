@@ -854,7 +854,7 @@
       <div class="instr-panel">
         <ul>
           <li><b>仓位看板</b>：汇总各标的当前先验/后验概率、建议凯利仓位，自动从各标的记录表最新一行取数，无需手动同步。</li>
-          <li><b>贝叶斯更新/凯利仓位记录表</b>：周大生、泸州老窖、五粮液、平安银行四只标的的贝叶斯更新记录表，每次财报或重大事件发布后新增一行。</li>
+          <li><b>贝叶斯更新/凯利仓位记录表</b>：各标的的贝叶斯更新记录表，每次财报或重大事件发布后新增一行。标的列表可动态增删——点击「+ 新增股票表」添加新标的，点击「🗑 删除此表」移除不再关注的标的。股票名称可直接点击修改。</li>
           <li><b>凯利速算器</b>：独立的 what-if 速算区，输入概率和赔率即可即时看仓位建议，不影响正式记录。</li>
         </ul>
       </div>
@@ -884,7 +884,7 @@
         <ol>
           <li>本工作表是决策辅助计算器，不构成投资建议。所有先验概率、似然比、预期收益/亏损都是主观估计，计算结果的可靠性完全取决于输入判断的质量。</li>
           <li>凯利公式假设可重复的独立押注；但你对单一标的的一次性判断本质上是小样本事件，公式结果应视为仓位"参考上限"而非精确解。</li>
-          <li>多标的组合仓位不能简单相加。周大生、泸州老窖、五粮液同属消费/白酒链条，平安银行与大盘系统性风险相关，在系统性下跌时会同涨同跌，并非真正独立。建议在单标的凯利仓位基础上，再叠加一层组合集中度折扣。</li>
+          <li>多标的组合仓位不能简单相加。各标的之间可能存在行业/系统性相关性（如白酒板块同涨同跌、银行与大盘系统性风险相关），并非真正独立。建议在单标的凯利仓位基础上，再叠加一层组合集中度折扣。</li>
           <li>贝叶斯更新最怕先验锚定和确认偏误：建议在看到新财报前，先把先验概率和似然比判定标准写下来，再对照数据打分，而不是看完数据后回头找理由。</li>
         </ol>
         <div class="blue-note">💡 <b>蓝色背景</b> = 需要你手动填写的输入；<b>灰色背景</b> = 自动计算的公式，不要手动覆盖。</div>
@@ -913,16 +913,22 @@
           <tbody id="dash-tbody"></tbody>
         </table>
       </div>
-      <div class="dash-tip">⚠️ 组合层面请勿将四个建议仓位直接相加——四只标的存在行业/系统性相关性，务必叠加集中度折扣后再决定实际总仓位。</div>
+      <div class="dash-tip">⚠️ 组合层面请勿将各标的建议仓位直接相加——标的之间存在行业/系统性相关性，务必叠加集中度折扣后再决定实际总仓位。</div>
     </div>
   </div>
 
   <!-- 贝叶斯更新/凯利仓位记录表（合并） -->
   <div class="panel" id="panel-bayesian">
-    <div id="bayesian-stock-zhoudasheng"></div>
-    <div id="bayesian-stock-luzhoulaojiao" style="margin-top:20px;"></div>
-    <div id="bayesian-stock-wuliangye" style="margin-top:20px;"></div>
-    <div id="bayesian-stock-pinganyinhang" style="margin-top:20px;"></div>
+    <div class="card">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>贝叶斯更新 / 凯利仓位记录表</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="new-stock-name" placeholder="股票名称（如 贵州茅台）" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:200px;font-family:inherit;">
+          <button class="btn btn-primary btn-sm" onclick="addStock()">+ 新增股票表</button>
+        </div>
+      </div>
+    </div>
+    <div id="bayesian-stocks-container"></div>
   </div>
 
   <!-- 实时行情 + 投资纪律 -->
@@ -1223,16 +1229,33 @@
 
 <script>
 // ============ Data Model ============
-const STOCK_KEYS = ['zhoudasheng','luzhoulaojiao','wuliangye','pinganyinhang'];
-const STOCK_NAMES = {
+// Stock list is dynamic — stored in DATA.stockOrder + DATA.stockNames
+// These are just defaults for first-time users
+const DEFAULT_STOCK_ORDER = ['zhoudasheng','luzhoulaojiao','wuliangye','pinganyinhang'];
+const DEFAULT_STOCK_NAMES = {
   zhoudasheng: '周大生',
   luzhoulaojiao: '泸州老窖',
   wuliangye: '五粮液',
   pinganyinhang: '平安银行'
 };
 
+// Get current stock keys/names from DATA (dynamic)
+function getStockKeys() {
+  return DATA.stockOrder || DEFAULT_STOCK_ORDER.slice();
+}
+function getStockName(key) {
+  return (DATA.stockNames && DATA.stockNames[key]) || key;
+}
+
 // Default data from xlsx
 const DEFAULT_DATA = {
+  stockOrder: ['zhoudasheng','luzhoulaojiao','wuliangye','pinganyinhang'],
+  stockNames: {
+    zhoudasheng: '周大生',
+    luzhoulaojiao: '泸州老窖',
+    wuliangye: '五粮液',
+    pinganyinhang: '平安银行'
+  },
   zhoudasheng: {
     nextCheck: '下一次现金流/中报数据',
     rows: [
@@ -1265,7 +1288,22 @@ const STORAGE_KEY = 'portfolio_framework_v1';
 function loadData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Migration: ensure stockOrder and stockNames exist
+      if (!parsed.stockOrder) {
+        // Infer from existing keys (any key that has .rows)
+        parsed.stockOrder = Object.keys(parsed).filter(k => parsed[k] && parsed[k].rows);
+        if (parsed.stockOrder.length === 0) parsed.stockOrder = DEFAULT_STOCK_ORDER.slice();
+      }
+      if (!parsed.stockNames) {
+        parsed.stockNames = {};
+        parsed.stockOrder.forEach(k => {
+          parsed.stockNames[k] = DEFAULT_STOCK_NAMES[k] || k;
+        });
+      }
+      return parsed;
+    }
   } catch(e) {}
   return JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
@@ -1366,16 +1404,26 @@ const STOCK_HEADERS = [
 
 function renderStockTable(key) {
   const stockData = DATA[key];
-  const container = document.getElementById('bayesian-stock-' + key);
+  if (!stockData) return;
+  const container = document.getElementById('bayesian-stocks-container');
   if (!container) return;
-  const name = STOCK_NAMES[key];
+  const name = getStockName(key);
 
-  let html = `<div class="card">
-    <div class="card-title">${name} — 贝叶斯更新 / 凯利仓位记录表</div>
+  // Check if this stock's card already exists
+  let card = document.getElementById('bayesian-card-' + key);
+
+  let html = `<div class="card" id="bayesian-card-${key}">
+    <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;">
+        <input type="text" value="${name}" style="font-size:16px;font-weight:600;border:1px solid var(--border);border-radius:6px;padding:4px 10px;width:200px;font-family:inherit;" onchange="renameStock('${key}', this.value)" title="点击修改股票名称">
+        <span style="color:var(--text-muted);font-size:13px;font-weight:400;">— 贝叶斯更新 / 凯利仓位记录表</span>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteStock('${key}')" title="删除整只股票的记录表">🗑 删除此表</button>
+    </div>
     <div class="table-actions">
       <div class="left">
         <button class="btn btn-primary btn-sm" onclick="addRow('${key}')">+ 新增一行</button>
-        <span class="info">蓝色 = 手动填写 · 灰色 = 自动计算</span>
+        <span class="info">蓝色 = 手动填写 · 灰色 = 自动计算 · 先验概率支持 0.6 / 60% / 60 格式</span>
       </div>
     </div>
     <div class="table-wrap">
@@ -1405,7 +1453,84 @@ function renderStockTable(key) {
     </div>
   </div>`;
 
-  container.innerHTML = html;
+  if (card) {
+    // Update existing card
+    card.outerHTML = html;
+  } else {
+    // Append new card
+    container.insertAdjacentHTML('beforeend', html);
+  }
+}
+
+// Render all stock tables
+function renderAllStockTables() {
+  const container = document.getElementById('bayesian-stocks-container');
+  if (!container) return;
+  container.innerHTML = '';
+  getStockKeys().forEach(key => renderStockTable(key));
+}
+
+// Add a new stock
+function addStock() {
+  const nameInput = document.getElementById('new-stock-name');
+  const name = nameInput.value.trim();
+  if (!name) {
+    alert('请输入股票名称');
+    nameInput.focus();
+    return;
+  }
+  // Generate a unique key from name (pinyin-like fallback)
+  let key = 's_' + Date.now().toString(36);
+  // Ensure uniqueness
+  while (DATA[key]) key = 's_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+
+  DATA[key] = { nextCheck: '', rows: [{ date:'', event:'', prior:'', lr:'', up:'', down:'', note:'' }] };
+  if (!DATA.stockOrder) DATA.stockOrder = [];
+  if (!DATA.stockNames) DATA.stockNames = {};
+  DATA.stockOrder.push(key);
+  DATA.stockNames[key] = name;
+
+  saveData();
+  renderStockTable(key);
+  nameInput.value = '';
+  // Re-render dashboard if visible
+  if (document.getElementById('panel-dashboard').classList.contains('active')) {
+    renderDashboard();
+  }
+}
+
+// Delete a stock
+function deleteStock(key) {
+  const name = getStockName(key);
+  if (!confirm('确认删除「' + name + '」的整张记录表？\n\n该股票的所有贝叶斯更新记录将永久删除。')) return;
+  // Remove from stockOrder
+  if (DATA.stockOrder) {
+    DATA.stockOrder = DATA.stockOrder.filter(k => k !== key);
+  }
+  // Remove from stockNames
+  if (DATA.stockNames) {
+    delete DATA.stockNames[key];
+  }
+  // Remove the data
+  delete DATA[key];
+  saveData();
+  renderAllStockTables();
+  // Re-render dashboard if visible
+  if (document.getElementById('panel-dashboard').classList.contains('active')) {
+    renderDashboard();
+  }
+}
+
+// Rename a stock
+function renameStock(key, newName) {
+  if (!newName.trim()) return; // Don't allow empty names
+  if (!DATA.stockNames) DATA.stockNames = {};
+  DATA.stockNames[key] = newName.trim();
+  saveData();
+  // Re-render dashboard if visible
+  if (document.getElementById('panel-dashboard').classList.contains('active')) {
+    renderDashboard();
+  }
 }
 
 function renderStockRow(key, row, i) {
@@ -1498,8 +1623,9 @@ function updateNextCheck(key, val) {
 function renderDashboard() {
   const tbody = document.getElementById('dash-tbody');
   let html = '';
-  STOCK_KEYS.forEach(key => {
+  getStockKeys().forEach(key => {
     const stock = DATA[key];
+    if (!stock) return;
     // Find last row with data
     let lastRow = null;
     for (let i = stock.rows.length - 1; i >= 0; i--) {
@@ -1515,7 +1641,7 @@ function renderDashboard() {
       const hk = halfKelly(fk);
       const qk = quarterKelly(fk);
       html += `<tr>
-        <td class="name">${STOCK_NAMES[key]}</td>
+        <td class="name">${getStockName(key)}</td>
         <td>${lastRow.date || '—'}</td>
         <td style="text-align:left;font-size:12px;max-width:300px;">${lastRow.event || '—'}</td>
         <td>${fmtPct(posterior) || '—'}</td>
@@ -1526,7 +1652,7 @@ function renderDashboard() {
       </tr>`;
     } else {
       html += `<tr>
-        <td class="name">${STOCK_NAMES[key]}</td>
+        <td class="name">${getStockName(key)}</td>
         <td colspan="6" style="color:var(--text-muted);">待填写</td>
         <td><input type="text" value="${stock.nextCheck||''}" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:12px;font-family:inherit;" onchange="updateNextCheck('${key}', this.value);renderDashboard();"></td>
       </tr>`;
@@ -2973,7 +3099,7 @@ async function initCloudSync() {
 
 // ============ Init ============
 function renderAll() {
-  STOCK_KEYS.forEach(key => renderStockTable(key));
+  renderAllStockTables();
   initNotesTable();
   loadFundEdits();
   initDiscipline();
