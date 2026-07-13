@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-13T14:39:26.163Z",
+  "savedAt": "2026-07-13T14:39:31.304Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -43,9 +43,7 @@
     "stockNames": {
       "zhoudasheng": "周大生"
     },
-    "stockOrder": [
-      "zhoudasheng"
-    ]
+    "stockOrder": []
   },
   "quoteCodes": [
     "000568",
