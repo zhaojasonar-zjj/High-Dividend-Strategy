@@ -1286,9 +1286,36 @@ function fmtNum(v, digits=4) {
   if (v === '' || v === null || v === undefined || isNaN(v)) return '';
   return parseFloat(v).toFixed(digits);
 }
+// Parse number from input — accepts "0.3", "30%", "2/3"
+function parseNum(v) {
+  if (v === '' || v === null || v === undefined) return NaN;
+  let s = String(v).trim();
+  if (s === '') return NaN;
+  let pct = false;
+  if (s.endsWith('%')) { pct = true; s = s.slice(0, -1).trim(); }
+  if (s.includes('/')) {
+    const parts = s.split('/');
+    if (parts.length === 2) {
+      const num = parseFloat(parts[0]);
+      const den = parseFloat(parts[1]);
+      if (!isNaN(num) && !isNaN(den) && den !== 0) return num / den;
+    }
+  }
+  let n = parseFloat(s);
+  if (isNaN(n)) return NaN;
+  if (pct) return n / 100;
+  return n;
+}
+// Parse probability — accepts "0.667", "66.7%", "66.7" (auto-convert >1 to fraction)
+function parseProb(v) {
+  const n = parseNum(v);
+  if (isNaN(n)) return NaN;
+  if (n > 1 && n <= 100) return n / 100;
+  return n;
+}
 // Bayesian posterior: E = (L*C)/(L*C + (1-C))
 function bayesPosterior(prior, lr) {
-  const c = parseFloat(prior), d = parseFloat(lr);
+  const c = parseProb(prior), d = parseNum(lr);
   if (isNaN(c) || isNaN(d) || c < 0 || c > 1) return '';
   const denom = d * c + (1 - c);
   if (denom === 0) return '';
@@ -1296,7 +1323,7 @@ function bayesPosterior(prior, lr) {
 }
 // Odds: b = up/down
 function calcOdds(up, down) {
-  const f = parseFloat(up), g = parseFloat(down);
+  const f = parseNum(up), g = parseNum(down);
   if (isNaN(f) || isNaN(g) || g === 0) return '';
   return f / g;
 }
@@ -1914,7 +1941,7 @@ function fmtYi(n) {
   if (n === null || n === undefined || n === '' || isNaN(n)) return '—';
   return (n / 1e8).toFixed(2);
 }
-function parseNum(s) {
+function parseNumRaw(s) {
   if (s === '' || s === null || s === undefined) return null;
   const n = parseFloat(s);
   return isNaN(n) ? null : n;
@@ -1979,10 +2006,10 @@ function renderFundTable() {
     const positionRaw  = getFundEdit(code, 'position');     // text
 
     // Calculated values
-    const ocfTtm    = parseNum(ocfTtmRaw);      // 亿
-    const capexTtm  = parseNum(capexTtmRaw);    // 亿
-    const quasiCash = parseNum(quasiCashRaw);   // 亿
-    const staticDiv = parseNum(staticDivRaw);   // 元/股
+    const ocfTtm    = parseNumRaw(ocfTtmRaw);      // 亿
+    const capexTtm  = parseNumRaw(capexTtmRaw);    // 亿
+    const quasiCash = parseNumRaw(quasiCashRaw);   // 亿
+    const staticDiv = parseNumRaw(staticDivRaw);   // 元/股
 
     // 企业价值 = 总市值 + 负债合计 - 类货币资金 (all in 元)
     let ev = null;
@@ -2076,10 +2103,10 @@ function recalcRow(code) {
   const totalMv     = v.TOTAL_MARKET_CAP || null;
   const liability   = f.LIABILITY || null;
 
-  const ocfTtm    = parseNum(getFundEdit(code, 'ocf_ttm'));
-  const capexTtm  = parseNum(getFundEdit(code, 'capex_ttm'));
-  const quasiCash = parseNum(getFundEdit(code, 'quasi_cash'));
-  const staticDiv = parseNum(getFundEdit(code, 'static_div'));
+  const ocfTtm    = parseNumRaw(getFundEdit(code, 'ocf_ttm'));
+  const capexTtm  = parseNumRaw(getFundEdit(code, 'capex_ttm'));
+  const quasiCash = parseNumRaw(getFundEdit(code, 'quasi_cash'));
+  const staticDiv = parseNumRaw(getFundEdit(code, 'static_div'));
 
   // 企业价值
   let ev = null;
@@ -2137,10 +2164,10 @@ function renderPortfolioValuation() {
     const pcfTtm     = v.PCF_OCF_TTM || null;
     const liability  = f.LIABILITY || null;
 
-    const ocfTtm    = parseNum(getFundEdit(code, 'ocf_ttm'));
-    const capexTtm  = parseNum(getFundEdit(code, 'capex_ttm'));
-    const quasiCash = parseNum(getFundEdit(code, 'quasi_cash'));
-    const staticDiv = parseNum(getFundEdit(code, 'static_div'));
+    const ocfTtm    = parseNumRaw(getFundEdit(code, 'ocf_ttm'));
+    const capexTtm  = parseNumRaw(getFundEdit(code, 'capex_ttm'));
+    const quasiCash = parseNumRaw(getFundEdit(code, 'quasi_cash'));
+    const staticDiv = parseNumRaw(getFundEdit(code, 'static_div'));
     const positionRaw = getFundEdit(code, 'position');
 
     // EV
