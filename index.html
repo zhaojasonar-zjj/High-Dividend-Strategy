@@ -2758,7 +2758,7 @@ async function cloudLoad() {
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();
     cloudSHA = data.sha;
-    const content = JSON.parse(atob(data.content.replace(/\n/g, '')));
+    const content = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, '')))));
     return { success: true, data: content };
   } catch(e) {
     setCloudStatus('加载失败: ' + e.message, 'error');
