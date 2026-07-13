@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-13T14:31:25.034Z",
+  "savedAt": "2026-07-13T14:35:00.000Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -88,7 +88,12 @@
       "wuliangye": "五粮液",
       "pinganyinhang": "中国平安"
     },
-    "stockOrder": []
+    "stockOrder": [
+      "zhoudasheng",
+      "luzhoulaojiao",
+      "wuliangye",
+      "pinganyinhang"
+    ]
   },
   "quoteCodes": [
     "000568",
