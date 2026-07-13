@@ -804,6 +804,39 @@
     color: var(--primary);
   }
 
+  /* Mindset tracker */
+  .mindset-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .mindset-summary-card {
+    background: var(--calc-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    text-align: center;
+  }
+  .mindset-summary-card .label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+  .mindset-summary-card .value { font-size: 22px; font-weight: 700; }
+  .mindset-summary-card .value.warn { color: var(--warn); }
+  .mindset-summary-card .value.danger { color: var(--danger); }
+  .mindset-summary-card .value.success { color: var(--success); }
+  .mindset-score-input {
+    width: 60px; padding: 4px 8px; border: 1px solid var(--border);
+    border-radius: 4px; font-size: 14px; font-weight: 600;
+    text-align: center; background: var(--input-bg); font-family: inherit;
+  }
+  .mindset-status { font-size: 12px; font-weight: 500; }
+  .mindset-status.ok { color: var(--success); }
+  .mindset-status.mid { color: var(--warn); }
+  .mindset-status.bad { color: var(--danger); }
+  .mindset-bar-container {
+    margin-top: 16px; background: var(--calc-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px 18px;
+  }
+  .mindset-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+  .mindset-bar-label { width: 80px; text-align: right; color: var(--text-muted); flex-shrink: 0; }
+  .mindset-bar-track { flex: 1; height: 14px; background: #e9ecef; border-radius: 7px; overflow: hidden; }
+  .mindset-bar-fill { height: 100%; border-radius: 7px; transition: width 0.3s; }
+  .mindset-bar-score { width: 40px; font-weight: 600; flex-shrink: 0; }
+
   /* Responsive */
   @media (max-width: 768px) {
     .content { padding: 12px; }
@@ -1108,6 +1141,48 @@
             </table>
           </div>
           <svg class="hist-chart" id="hist-chart"></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- 控制人性量化评估 -->
+    <div class="discipline-panel" style="margin-top:20px;">
+      <div class="discipline-body">
+        <div class="card-title" style="margin-bottom:10px;">控制人性量化评估 — 价值投资"知行合一"自评</div>
+        <div style="overflow-x:auto;">
+          <table class="quest-table" id="mindset-table">
+            <thead>
+              <tr>
+                <th style="width:36px;">#</th>
+                <th style="min-width:100px;">评估维度</th>
+                <th style="min-width:400px;">核心审计问题</th>
+                <th style="width:80px;">自评分数<br>(1-5)</th>
+                <th style="width:120px;">诊断状态</th>
+              </tr>
+            </thead>
+            <tbody id="mindset-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="mindset-summary" id="mindset-summary" style="margin-top:12px;"></div>
+
+        <!-- 底层理论与落地铁律 -->
+        <div style="margin-top:20px;">
+          <div class="card-title" style="font-size:14px;margin-bottom:8px;">底层理论与落地铁律</div>
+          <div style="overflow-x:auto;">
+            <table class="quest-table" id="mindset-theory-table">
+              <thead>
+                <tr>
+                  <th style="width:36px;">#</th>
+                  <th style="min-width:120px;">核心理论/机制</th>
+                  <th style="min-width:300px;">行为经济学/心理学释义</th>
+                  <th style="min-width:100px;">对应量化测评项</th>
+                  <th style="min-width:300px;">日常践行刚性硬约束</th>
+                </tr>
+              </thead>
+              <tbody id="mindset-theory-tbody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -2819,6 +2894,172 @@ function initDiscipline() {
   renderDecLog();
   renderQuestionnaire();
   renderHistory();
+  initMindsetTracker();
+}
+
+// ============ Mindset Tracker (控制人性量化评估) ============
+const MINDSET_STORE_KEY = 'portfolio_mindset';
+const MINDSET_QUESTIONS = [
+  { dim: '信息节食', question: '在非交易需要时，我是否能做到一周只看1-2次盘，甚至不看盘，不被波动的分时图扰乱心智？' },
+  { dim: '逻辑锚定', question: '如果明天我持有的核心股票暴跌30%且基本面无恶化，我的第一反应是"兴奋/计划加仓"而不是"恐惧/割肉"？' },
+  { dim: '知行一致', question: '目前持有的前三大重仓股，我是否能不看任何资料，用3分钟向外行解释清楚它们的赚钱商业逻辑和核心风险？' },
+  { dim: '研究独立', question: '在买入或持有过程中，我是否能做到不去看各种股评社区（如雪球、东财）的散户吹捧或看空言论，保持独立？' },
+  { dim: '规则执行', question: '我所有的买入和卖出操作，是否都严格遵循了预先写好的"投资备忘录"计划，而非临时起意的随机交易？' },
+  { dim: '安全边际', question: '我的账户里是否永远留有应对极端行情的"备用现金"或场外稳定现金流，从而让我能安然入睡？' },
+  { dim: '认知诚实', question: '面对看错的股票，我是否能果断认错止损，而不是用"长期投资"来自我安慰、拖延纠错？' }
+];
+const MINDSET_THEORIES = [
+  { theory: '行为金融学\n(Behavioral Finance)', desc: '损失厌恶（Loss Aversion）：亏损痛苦是盈利快乐的2倍以上，导致频繁看盘和无理智割肉。\n过度自信：将牛市运气归结为能力，盲目满仓。', items: '第1项 (信息节食)\n第2项 (逻辑锚定)', rule: '【物理隔离】强制卸载手机行情软件，只保留电脑端交易功能；严格控制非交易日的看盘频率，每周不超过2次。' },
+  { theory: '格雷厄姆的\n"市场先生"', desc: '把市场视作躁郁症合伙人。知行不一本质上是因为被市场先生的情绪同化，无法做到利用其情绪提供的不合理低价。', items: '第2项 (逻辑锚定)\n第4项 (研究独立)', rule: '【估值锚定】在股票暴跌时，严禁盯着价格软件，必须打开企业财报与估值模型，确认基本面未恶化则执行分批买入方案。' },
+  { theory: '芒格的\n"能力圈理论"', desc: '"清晰的边界比能力圈的大小更重要"。在能力圈外盲目下注，由于内心底层并不真正"确信"，在股价波动时必然慌乱失守。', items: '第3项 (知行一致)\n第7项 (认知诚实)', rule: '【白名单制】非自身熟悉、不能用3分钟向外行解释清楚赚钱逻辑的股票，一律不入自选股，不赚认知以外的钱。' },
+  { theory: '投资备忘录制度\n(Investment Memo)', desc: '用静态、理性的系统（事前计划）去对抗动态、非理性的系统（盘中冲动）。将主观的自制力，转化为客观的流程管理。', items: '第5项 (规则执行)', rule: '【刚性流程】买入任何标的前，必须强制写明3大买入核心逻辑、3个基本面卖出条件（不含价格下跌）。无备忘录严禁下单。' },
+  { theory: '现金流与安全边际', desc: '留足资产弹性。没有现金防御，极易在市场最恐慌的底部因为资金链断裂或极度焦虑被迫"清仓割肉"。', items: '第6项 (安全边际)', rule: '【子弹备用】账户永远保留20%以上的战略现金或有可靠的场外持续增量资金流，确保在暴跌时有能力且有心态"买入"。' }
+];
+
+let mindsetData = { scores: {} };
+
+function loadMindsetData() {
+  try {
+    const raw = localStorage.getItem(MINDSET_STORE_KEY);
+    if (raw) mindsetData = JSON.parse(raw);
+  } catch(e) { mindsetData = { scores: {} }; }
+  if (!mindsetData.scores) mindsetData.scores = {};
+}
+function saveMindsetData() {
+  localStorage.setItem(MINDSET_STORE_KEY, JSON.stringify(mindsetData));
+  scheduleCloudSync();
+}
+
+function getMindsetStatus(score) {
+  if (score <= 2) return { text: '⚠️ 风险突出', cls: 'bad', color: '#ef4444' };
+  if (score === 3) return { text: '🔸 需提升', cls: 'mid', color: '#f59e0b' };
+  return { text: '✅ 表现优秀', cls: 'ok', color: '#10b981' };
+}
+
+function renderMindsetTable() {
+  const tbody = document.getElementById('mindset-tbody');
+  if (!tbody) return;
+  let html = '';
+  MINDSET_QUESTIONS.forEach((q, idx) => {
+    const score = mindsetData.scores[idx];
+    const status = score !== undefined && score !== '' ? getMindsetStatus(score) : null;
+    html += '<tr>' +
+      '<td style="text-align:center;color:var(--text-muted);">' + (idx+1) + '</td>' +
+      '<td style="font-weight:600;">' + q.dim + '</td>' +
+      '<td style="text-align:left;font-size:12px;">' + q.question + '</td>' +
+      '<td style="text-align:center;">' +
+        '<input type="number" min="1" max="5" class="mindset-score-input" value="' + (score !== undefined ? score : '') + '" ' +
+        'oninput="updateMindsetScore(' + idx + ', this.value)">' +
+      '</td>' +
+      '<td style="text-align:center;">' +
+        (status ? '<span class="mindset-status ' + status.cls + '">' + status.text + '</span>' : '') +
+      '</td>' +
+    '</tr>';
+  });
+  tbody.innerHTML = html;
+  renderMindsetSummary();
+}
+
+function updateMindsetScore(idx, val) {
+  if (val === '') { delete mindsetData.scores[idx]; }
+  else {
+    let v = parseInt(val);
+    if (isNaN(v)) return;
+    v = Math.max(1, Math.min(5, v));
+    mindsetData.scores[idx] = v;
+  }
+  saveMindsetData();
+  // Update only the status cell
+  const tbody = document.getElementById('mindset-tbody');
+  if (!tbody) return;
+  const row = tbody.rows[idx];
+  if (!row) return;
+  const score = mindsetData.scores[idx];
+  const statusCell = row.cells[4];
+  if (score !== undefined) {
+    const status = getMindsetStatus(score);
+    statusCell.innerHTML = '<span class="mindset-status ' + status.cls + '">' + status.text + '</span>';
+  } else {
+    statusCell.innerHTML = '';
+  }
+  renderMindsetSummary();
+}
+
+function renderMindsetSummary() {
+  const container = document.getElementById('mindset-summary');
+  if (!container) return;
+  const scores = MINDSET_QUESTIONS.map((_, idx) => mindsetData.scores[idx]).filter(s => s !== undefined && !isNaN(s));
+  const total = scores.reduce((a, b) => a + b, 0);
+  const maxTotal = MINDSET_QUESTIONS.length * 5;
+
+  let level = '', levelCls = '', prescription = '';
+  if (total >= 28) {
+    level = '👑 知行合一践行者'; levelCls = 'success';
+    prescription = '已建立成熟的价值投资心智系统，继续保持知行合一的状态，可适度扩大能力圈。';
+  } else if (total >= 21) {
+    level = '⚖️ 摇摆的理性人'; levelCls = 'warn';
+    prescription = '理性框架已初步建立但在执行中时有摇摆，重点强化薄弱维度的刚性约束。';
+  } else if (total > 0) {
+    level = '❌ 本能的奴隶'; levelCls = 'danger';
+    prescription = '投资决策仍被本能和情绪驱动，建议立即建立投资备忘录制度和物理隔离机制。';
+  } else {
+    level = '—'; levelCls = ''; prescription = '请完成上方自评打分后查看诊断结果。';
+  }
+
+  let html = '<div class="mindset-summary">' +
+    '<div class="mindset-summary-card"><div class="label">量化综合总分 (满分' + maxTotal + '分)</div>' +
+    '<div class="value ' + levelCls + '">' + (total > 0 ? total : '—') + '</div></div>' +
+    '<div class="mindset-summary-card"><div class="label">当前心智成长段位</div>' +
+    '<div class="value ' + levelCls + '">' + level + '</div></div>' +
+  '</div>';
+
+  // Bar chart
+  html += '<div class="mindset-bar-container">';
+  html += '<div style="font-size:13px;font-weight:600;margin-bottom:10px;">各维度投资心智量化得分分布</div>';
+  MINDSET_QUESTIONS.forEach((q, idx) => {
+    const score = mindsetData.scores[idx];
+    const pct = score ? (score / 5 * 100) : 0;
+    let color = '#e9ecef';
+    if (score) {
+      if (score <= 2) color = '#ef4444';
+      else if (score === 3) color = '#f59e0b';
+      else color = '#10b981';
+    }
+    html += '<div class="mindset-bar-row">' +
+      '<span class="mindset-bar-label">' + q.dim + '</span>' +
+      '<div class="mindset-bar-track"><div class="mindset-bar-fill" style="width:' + pct + '%;background:' + color + ';"></div></div>' +
+      '<span class="mindset-bar-score">' + (score || '—') + '/5</span>' +
+    '</div>';
+  });
+  html += '</div>';
+
+  // Prescription
+  html += '<div style="margin-top:12px;background:#fff3cd;border:1px solid #ffeaa7;border-radius:8px;padding:12px 16px;font-size:13px;line-height:1.6;">' +
+    '<b>📋 系统优化处方建议：</b>' + prescription + '</div>';
+
+  container.innerHTML = html;
+}
+
+function renderMindsetTheory() {
+  const tbody = document.getElementById('mindset-theory-tbody');
+  if (!tbody) return;
+  let html = '';
+  MINDSET_THEORIES.forEach((t, idx) => {
+    html += '<tr>' +
+      '<td style="text-align:center;color:var(--text-muted);">' + (idx+1) + '</td>' +
+      '<td style="font-weight:600;white-space:pre-line;">' + t.theory + '</td>' +
+      '<td style="text-align:left;font-size:12px;white-space:pre-line;">' + t.desc + '</td>' +
+      '<td style="text-align:left;font-size:12px;white-space:pre-line;">' + t.items + '</td>' +
+      '<td style="text-align:left;font-size:12px;">' + t.rule + '</td>' +
+    '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+function initMindsetTracker() {
+  loadMindsetData();
+  renderMindsetTable();
+  renderMindsetTheory();
 }
 
 // ============ Cloud Sync (GitHub API) ============
@@ -2864,7 +3105,8 @@ function collectAllData() {
     quoteCodes: quoteCodes,
     fundEdits: fundEdits,
     notes: JSON.parse(localStorage.getItem('portfolio_notes_v2') || '{}'),
-    discipline: JSON.parse(localStorage.getItem(DISC_STORE_KEY) || '{}')
+    discipline: JSON.parse(localStorage.getItem(DISC_STORE_KEY) || '{}'),
+    mindset: JSON.parse(localStorage.getItem(MINDSET_STORE_KEY) || '{}')
   };
 }
 
@@ -2914,6 +3156,12 @@ function distributeCloudData(cloudData) {
     if (!discData.questScores) discData.questScores = {};
     if (!discData.questPeriod) discData.questPeriod = '';
     if (!discData.history) discData.history = [];
+    changed = true;
+  }
+  if (cloudData.mindset) {
+    localStorage.setItem(MINDSET_STORE_KEY, JSON.stringify(cloudData.mindset));
+    mindsetData = cloudData.mindset;
+    if (!mindsetData.scores) mindsetData.scores = {};
     changed = true;
   }
   return changed;
