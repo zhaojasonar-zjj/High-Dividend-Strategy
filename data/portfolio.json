@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-13T12:19:38.022Z",
+  "savedAt": "2026-07-13T12:20:06.383Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -72,6 +72,10 @@
     "601318"
   ],
   "fundEdits": {
+    "601318": {
+      "dynamic_div": "稳并略增",
+      "static_div": "2.7"
+    },
     "002867": {
       "static_div": "0.9",
       "quasi_cash": "7.2",
