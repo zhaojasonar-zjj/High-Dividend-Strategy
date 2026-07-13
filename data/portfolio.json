@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-13T13:46:48.593Z",
+  "savedAt": "2026-07-13T13:47:28.930Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -48,7 +48,7 @@
           "prior": "50%",
           "lr": "1",
           "up": "",
-          "down": "",
+          "down": "10%",
           "note": ""
         }
       ]
