@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-13T12:28:58.607Z",
+  "savedAt": "2026-07-13T12:30:00.896Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -150,6 +150,15 @@
         "consistency": 4,
         "total": 3.79,
         "status": "✅ 正常"
+      },
+      {
+        "period": "2026Q2",
+        "discipline": 3.33,
+        "emotion": 3,
+        "bias": 4.33,
+        "consistency": 3,
+        "total": 3.38,
+        "status": "⚠ 黄灯"
       }
     ]
   }
