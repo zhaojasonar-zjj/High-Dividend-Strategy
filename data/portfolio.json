@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-13T14:14:56.696Z",
+  "savedAt": "2026-07-13T14:15:00.786Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -83,7 +83,8 @@
       "b": "2"
     },
     "stockNames": {
-      "zhoudasheng": "周大生"
+      "zhoudasheng": "周大生",
+      "luzhoulaojiao": "泸州老窖"
     }
   },
   "quoteCodes": [
