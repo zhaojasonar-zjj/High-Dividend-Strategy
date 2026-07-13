@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-13T12:21:40.365Z",
+  "savedAt": "2026-07-13T12:22:27.757Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -112,7 +112,17 @@
         "action": "7/16分红再投资中国平安，沪市打新门票，类现金",
         "basis": "中国平安符合高股息+低估值+确定性，股息稳且略增，周期股",
         "emotion": "1",
-        "expected": "若中报确认拐点，考虑用周大生分红资金分批加仓",
+        "expected": "逢低逢跌/均价49-50建仓，低买高卖，不亏即对",
+        "actual": "",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
+        "expected": "",
         "actual": "",
         "review": ""
       }
