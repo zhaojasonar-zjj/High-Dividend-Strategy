@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-13T14:52:46.768Z",
+  "savedAt": "2026-07-13T14:52:55.544Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -86,29 +86,13 @@
       "zhoudasheng",
       "luzhoulaojiao",
       "wuliangye",
-      "pinganyinhang",
-      "s_mrjcd8qb"
+      "pinganyinhang"
     ],
     "stockNames": {
       "zhoudasheng": "周大生",
       "luzhoulaojiao": "泸州老窖",
       "wuliangye": "五粮液",
-      "pinganyinhang": "中国平安",
-      "s_mrjcd8qb": "无锡银行"
-    },
-    "s_mrjcd8qb": {
-      "nextCheck": "",
-      "rows": [
-        {
-          "date": "",
-          "event": "",
-          "prior": "",
-          "lr": "",
-          "up": "",
-          "down": "",
-          "note": ""
-        }
-      ]
+      "pinganyinhang": "中国平安"
     }
   },
   "quoteCodes": [
