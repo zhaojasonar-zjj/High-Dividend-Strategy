@@ -1241,7 +1241,11 @@ const DEFAULT_STOCK_NAMES = {
 
 // Get current stock keys/names from DATA (dynamic)
 function getStockKeys() {
-  return DATA.stockOrder || DEFAULT_STOCK_ORDER.slice();
+  if (DATA.stockOrder && DATA.stockOrder.length > 0) return DATA.stockOrder;
+  // Fallback: infer from data keys that have .rows
+  const inferred = Object.keys(DATA).filter(k => DATA[k] && typeof DATA[k] === 'object' && 'rows' in DATA[k]);
+  if (inferred.length > 0) return inferred;
+  return DEFAULT_STOCK_ORDER.slice();
 }
 function getStockName(key) {
   return (DATA.stockNames && DATA.stockNames[key]) || key;
@@ -1290,18 +1294,17 @@ function loadData() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Migration: ensure stockOrder and stockNames exist
-      if (!parsed.stockOrder) {
-        // Infer from existing keys (any key that has .rows)
-        parsed.stockOrder = Object.keys(parsed).filter(k => parsed[k] && parsed[k].rows);
+      // Migration: ensure stockOrder and stockNames exist and are consistent
+      if (!parsed.stockOrder || !Array.isArray(parsed.stockOrder) || parsed.stockOrder.length === 0) {
+        parsed.stockOrder = Object.keys(parsed).filter(k => parsed[k] && typeof parsed[k] === 'object' && 'rows' in parsed[k]);
         if (parsed.stockOrder.length === 0) parsed.stockOrder = DEFAULT_STOCK_ORDER.slice();
       }
       if (!parsed.stockNames) {
         parsed.stockNames = {};
-        parsed.stockOrder.forEach(k => {
-          parsed.stockNames[k] = DEFAULT_STOCK_NAMES[k] || k;
-        });
       }
+      parsed.stockOrder.forEach(k => {
+        if (!parsed.stockNames[k]) parsed.stockNames[k] = DEFAULT_STOCK_NAMES[k] || k;
+      });
       return parsed;
     }
   } catch(e) {}
@@ -1502,15 +1505,19 @@ function addStock() {
 // Delete a stock
 function deleteStock(key) {
   const name = getStockName(key);
+  // Safety: prevent deleting if only 1 stock left
+  const currentKeys = getStockKeys();
+  if (currentKeys.length <= 1) {
+    alert('至少保留一只股票的记录表，无法删除最后一只。');
+    return;
+  }
   if (!confirm('确认删除「' + name + '」的整张记录表？\n\n该股票的所有贝叶斯更新记录将永久删除。')) return;
   // Remove from stockOrder
-  if (DATA.stockOrder) {
-    DATA.stockOrder = DATA.stockOrder.filter(k => k !== key);
-  }
+  if (!DATA.stockOrder) DATA.stockOrder = getStockKeys();
+  DATA.stockOrder = DATA.stockOrder.filter(k => k !== key);
   // Remove from stockNames
-  if (DATA.stockNames) {
-    delete DATA.stockNames[key];
-  }
+  if (!DATA.stockNames) DATA.stockNames = {};
+  delete DATA.stockNames[key];
   // Remove the data
   delete DATA[key];
   saveData();
@@ -2866,6 +2873,22 @@ function distributeCloudData(cloudData) {
   let changed = false;
   if (cloudData.main) {
     DATA = cloudData.main;
+    // Migration: ensure stockOrder and stockNames exist and are consistent
+    if (!DATA.stockOrder || DATA.stockOrder.length === 0) {
+      DATA.stockOrder = Object.keys(DATA).filter(k => DATA[k] && typeof DATA[k] === 'object' && 'rows' in DATA[k]);
+      if (DATA.stockOrder.length === 0) DATA.stockOrder = DEFAULT_STOCK_ORDER.slice();
+    }
+    if (!DATA.stockNames) {
+      DATA.stockNames = {};
+    }
+    // Ensure all stocks in stockOrder have a name
+    DATA.stockOrder.forEach(k => {
+      if (!DATA.stockNames[k]) DATA.stockNames[k] = DEFAULT_STOCK_NAMES[k] || k;
+    });
+    // Clean up stockNames entries for deleted stocks
+    Object.keys(DATA.stockNames).forEach(k => {
+      if (!DATA.stockOrder.includes(k)) delete DATA.stockNames[k];
+    });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
     changed = true;
   }
