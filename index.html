@@ -1901,11 +1901,11 @@ function fmtBigNum(n) {
   if (abs >= 1e4)  return (n / 1e4).toFixed(2) + '万';
   return n.toFixed(2);
 }
-function fmtPct(n, decimals) {
+function fmtPctRaw(n, decimals) {
   if (n === null || n === undefined || n === '' || isNaN(n)) return '—';
   return n.toFixed(decimals || 2) + '%';
 }
-function fmtNum(n, decimals) {
+function fmtNumRaw(n, decimals) {
   if (n === null || n === undefined || n === '' || isNaN(n)) return '—';
   return n.toFixed(decimals || 2);
 }
@@ -2008,16 +2008,16 @@ function renderFundTable() {
       + '<td>' + code + '</td>'
       + '<td>' + name + '</td>'
       // 市值 (4)
-      + '<td>' + fmtNum(closePrice) + '</td>'
+      + '<td>' + fmtNumRaw(closePrice) + '</td>'
       + '<td>' + fmtBigNum(totalShares) + '</td>'
       + '<td>' + fmtBigNum(totalMv) + '</td>'
       + '<td class="calc-cell">' + fmtBigNum(ev) + '</td>'
       // 估值 (5)
-      + '<td>' + fmtNum(peTtm) + '</td>'
-      + '<td>' + fmtNum(pbMrq) + '</td>'
-      + '<td>' + fmtNum(pcfTtm) + '</td>'
-      + '<td class="calc-cell">' + (fcfYield !== null ? fmtNum(fcfYield) : '—') + '</td>'
-      + '<td class="calc-cell">' + fmtPct(divYield) + '</td>'
+      + '<td>' + fmtNumRaw(peTtm) + '</td>'
+      + '<td>' + fmtNumRaw(pbMrq) + '</td>'
+      + '<td>' + fmtNumRaw(pcfTtm) + '</td>'
+      + '<td class="calc-cell">' + (fcfYield !== null ? fmtNumRaw(fcfYield) : '—') + '</td>'
+      + '<td class="calc-cell">' + fmtPctRaw(divYield) + '</td>'
       // 财务 (7)
       + '<td>' + reportDate + '</td>'
       + '<td>' + fmtBigNum(liability) + '</td>'
@@ -2027,7 +2027,7 @@ function renderFundTable() {
       // editable: 资本支出(TTM) in 亿
       + '<td contenteditable="true" data-edit="' + code + '|capex_ttm" data-unit="亿">' + (capexTtmRaw || '') + '</td>'
       // calc: 自由现金流 in 亿
-      + '<td class="calc-cell">' + (fcf !== null ? fmtNum(fcf) : '—') + '</td>'
+      + '<td class="calc-cell">' + (fcf !== null ? fmtNumRaw(fcf) : '—') + '</td>'
       // editable: 类货币资金 in 亿
       + '<td contenteditable="true" data-edit="' + code + '|quasi_cash" data-unit="亿">' + (quasiCashRaw || '') + '</td>'
       // 分红 (2)
@@ -2106,9 +2106,9 @@ function recalcRow(code) {
     const cells = row.querySelectorAll('td');
     // Column layout: 0=code, 1=name, 2=price, 3=shares, 4=mv, 5=EV(calc), 6=PE, 7=PB, 8=PCF, 9=FCFyield(calc), 10=divYield(calc), 11=reportDate, 12=liability, 13=parentNP, 14=ocf(edit), 15=capex(edit), 16=fcf(calc), 17=quasiCash(edit), 18=staticDiv(edit), 19=dynamicDiv(edit), 20=position(edit)
     cells[5].textContent  = fmtBigNum(ev);
-    cells[9].textContent  = fcfYield !== null ? fmtNum(fcfYield) : '—';
-    cells[10].textContent = fmtPct(divYield);
-    cells[16].textContent = fcf !== null ? fmtNum(fcf) : '—';
+    cells[9].textContent  = fcfYield !== null ? fmtNumRaw(fcfYield) : '—';
+    cells[10].textContent = fmtPctRaw(divYield);
+    cells[16].textContent = fcf !== null ? fmtNumRaw(fcf) : '—';
   });
   renderPortfolioValuation();
 }
