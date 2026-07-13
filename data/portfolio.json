@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-13T15:53:12.917Z",
+  "savedAt": "2026-07-13T15:57:09.535Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -153,6 +153,16 @@
         "basis": "知行合一，坚守纪律",
         "emotion": "1",
         "expected": "逢跌/逢低/均价熊市股利再投资，坏事变好事",
+        "actual": "",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
+        "expected": "",
         "actual": "",
         "review": ""
       }
