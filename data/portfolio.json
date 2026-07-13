@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-13T12:20:18.833Z",
+  "savedAt": "2026-07-13T12:20:31.960Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -104,5 +104,43 @@
     }
   },
   "notes": {},
-  "discipline": {}
+  "discipline": {
+    "decLog": [
+      {
+        "date": "2026-07-12",
+        "stock": "五粮液",
+        "action": "观察，未操作",
+        "basis": "等待8月14日中报确认净利润拐点是否持续",
+        "emotion": "2",
+        "expected": "若中报确认拐点，考虑用周大生分红资金分批加仓",
+        "actual": "",
+        "review": ""
+      }
+    ],
+    "questScores": {
+      "0": 4,
+      "1": 5,
+      "2": 4,
+      "3": 3,
+      "4": 4,
+      "5": 3,
+      "6": 4,
+      "7": 3,
+      "8": 4,
+      "9": 4,
+      "10": 4
+    },
+    "questPeriod": "2026Q3",
+    "history": [
+      {
+        "period": "2026Q2",
+        "discipline": 4,
+        "emotion": 3.7,
+        "bias": 3.3,
+        "consistency": 4,
+        "total": 3.79,
+        "status": "✅ 正常"
+      }
+    ]
+  }
 }
