@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-13T14:15:04.264Z",
+  "savedAt": "2026-07-13T14:15:09.986Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -85,7 +85,8 @@
     "stockNames": {
       "zhoudasheng": "周大生",
       "luzhoulaojiao": "泸州老窖",
-      "wuliangye": "五粮液"
+      "wuliangye": "五粮液",
+      "pinganyinhang": "中国平安"
     }
   },
   "quoteCodes": [
