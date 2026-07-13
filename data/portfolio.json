@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-13T14:39:31.304Z",
+  "savedAt": "2026-07-13T14:46:00.000Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -34,16 +34,66 @@
         }
       ]
     },
+    "luzhoulaojiao": {
+      "nextCheck": "下一次财报（关注渠道去库存进度）",
+      "rows": [
+        {
+          "date": "2026-07-9",
+          "event": "74.91元，静态股息率：泸州老窖>周大生，泸州老窖约=格力电器",
+          "prior": "50%",
+          "lr": 1,
+          "up": "20%",
+          "down": "10%",
+          "note": "股价越低，股息率越高，安全边际越高"
+        }
+      ]
+    },
+    "wuliangye": {
+      "nextCheck": "下一次财报",
+      "rows": [
+        {
+          "date": "2026-7-10",
+          "event": "73.69元，披露分红实施公告，7/16分红资金到账",
+          "prior": "50%",
+          "lr": "1",
+          "up": "20%",
+          "down": "15%",
+          "note": ""
+        }
+      ]
+    },
+    "pinganyinhang": {
+      "nextCheck": "2026-08-14 中报",
+      "rows": [
+        {
+          "date": "2026-04-15",
+          "event": "2026Q1单季度：营收+4.7%，净利润+3.0%，多年零售信贷质量恶化后首次转正（日期为季报披露期近似值，请核对交易所公告日）",
+          "prior": 0.4,
+          "lr": 1.5,
+          "up": 0.4,
+          "down": 0.15,
+          "note": "8月14日中报为关键验证节点：若中报延续或加速改善，似然比应显著上调；若增速回落或不良率反弹，似然比应下调至1以下"
+        }
+      ]
+    },
     "kelly": {
       "p": "0.6",
       "up": "0.3",
       "down": "0.15",
       "b": "2"
     },
+    "stockOrder": [
+      "zhoudasheng",
+      "luzhoulaojiao",
+      "wuliangye",
+      "pinganyinhang"
+    ],
     "stockNames": {
-      "zhoudasheng": "周大生"
-    },
-    "stockOrder": []
+      "zhoudasheng": "周大生",
+      "luzhoulaojiao": "泸州老窖",
+      "wuliangye": "五粮液",
+      "pinganyinhang": "中国平安"
+    }
   },
   "quoteCodes": [
     "000568",
@@ -103,16 +153,6 @@
         "basis": "知行合一，坚守纪律",
         "emotion": "1",
         "expected": "逢跌/逢低/均价熊市股利再投资，坏事变好事",
-        "actual": "",
-        "review": ""
-      },
-      {
-        "date": "2026-7-13",
-        "stock": "中国平安",
-        "action": "约49-50元，沪市打新门票的储备标的，逢跌逢低/均价建仓",
-        "basis": "中国平安符合高股息+低估值+确定性，股息稳且略增，周期股",
-        "emotion": "1",
-        "expected": "50元以下少量建仓，股价越低仓位越高",
         "actual": "",
         "review": ""
       }
