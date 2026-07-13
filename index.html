@@ -690,6 +690,120 @@
     height: 120px;
   }
 
+  /* Cloud sync */
+  .cloud-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.1);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+  .cloud-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .cloud-dot.synced { background: #10b981; }
+  .cloud-dot.saving { background: #f59e0b; animation: pulse 1s infinite; }
+  .cloud-dot.loading { background: #3b82f6; animation: pulse 1s infinite; }
+  .cloud-dot.error { background: #ef4444; }
+  .cloud-dot.offline { background: #6b7280; }
+  .cloud-dot.ready { background: #10b981; }
+  #cloud-status-text { white-space: nowrap; max-width: 300px; overflow: hidden; text-overflow: ellipsis; }
+  .cloud-btn {
+    padding: 4px 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    background: rgba(255,255,255,0.1);
+    color: var(--header-text);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .cloud-btn:hover { background: rgba(255,255,255,0.2); }
+
+  /* Token modal */
+  .token-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+  .token-modal.show { display: flex; }
+  .token-modal-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 28px 32px;
+    max-width: 560px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .token-modal-box h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .token-modal-box p {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+  .token-modal-box p a {
+    color: var(--primary);
+    text-decoration: none;
+  }
+  .token-modal-box p a:hover { text-decoration: underline; }
+  .token-modal-box input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: monospace;
+    margin-bottom: 16px;
+    background: var(--input-bg);
+  }
+  .token-modal-box input:focus {
+    outline: 2px solid var(--primary);
+    background: #fff;
+  }
+  .token-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+  .token-modal-actions .btn-danger {
+    margin-right: auto;
+  }
+  .token-modal-detail {
+    background: var(--calc-bg);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--text-muted);
+  }
+  .token-modal-detail ol { padding-left: 18px; }
+  .token-modal-detail code {
+    background: var(--primary-light);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11px;
+    color: var(--primary);
+  }
+
   /* Responsive */
   @media (max-width: 768px) {
     .content { padding: 12px; }
@@ -704,9 +818,16 @@
 <div class="topbar">
   <div>
     <h1>高股息策略 × 贝叶斯定理 × 凯利公式 — 仓位管理工作表</h1>
-    <div class="subtitle">网页版 · 数据自动保存在浏览器本地 · 公式实时计算</div>
+    <div class="subtitle">网页版 · 云端同步 · 公式实时计算</div>
   </div>
   <div class="topbar-actions">
+    <div class="cloud-bar">
+      <span class="cloud-dot offline" id="cloud-dot"></span>
+      <span id="cloud-status-text">未连接云端</span>
+      <button class="cloud-btn" onclick="manualCloudSave()" title="手动保存到云端">⬆ 保存</button>
+      <button class="cloud-btn" onclick="cloudLoadAndRender()" title="从云端加载最新数据">⬇ 加载</button>
+      <button class="cloud-btn" onclick="showTokenModal()" title="云端同步设置">⚙ 设置</button>
+    </div>
     <button class="btn" onclick="exportData()">导出 JSON</button>
     <label class="btn" style="margin:0;">
       导入 JSON
@@ -1075,6 +1196,31 @@
 
 </div>
 
+<!-- Token Modal -->
+<div class="token-modal" id="token-modal">
+  <div class="token-modal-box">
+    <h3>☁️ 云端同步设置</h3>
+    <p>输入 GitHub Personal Access Token (PAT) 以启用跨设备数据同步。Token 仅存储在当前浏览器本地，不会上传到任何服务器。</p>
+    <div class="token-modal-detail">
+      <b>获取 Token 步骤：</b>
+      <ol>
+        <li>打开 <a href="https://github.com/settings/tokens?type=beta" target="_blank">GitHub Settings → Personal access tokens → Fine-grained</a></li>
+        <li>点击 <b>Generate new token</b></li>
+        <li>Token name 随意填（如 <code>portfolio-sync</code>），Expiration 选 <code>No expiration</code> 或一年</li>
+        <li><b>Repository access</b> → 选 <code>Only select repositories</code> → 选 <code>High-Dividend-Strategy</code></li>
+        <li><b>Permissions</b> → Repository permissions → <code>Contents</code> → 选 <b>Read and write</b></li>
+        <li>点击 <b>Generate token</b>，复制生成的 token 粘贴到下方</li>
+      </ol>
+    </div>
+    <input type="password" id="token-input" placeholder="github_pat_xxxx..." autocomplete="off">
+    <div class="token-modal-actions">
+      <button class="btn btn-danger" onclick="clearTokenFromModal()">清除 Token</button>
+      <button class="btn" onclick="hideTokenModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveTokenFromModal()">保存并连接</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============ Data Model ============
 const STOCK_KEYS = ['zhoudasheng','luzhoulaojiao','wuliangye','pinganyinhang'];
@@ -1125,6 +1271,7 @@ function loadData() {
 }
 function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
+  scheduleCloudSync();
 }
 let DATA = loadData();
 
@@ -1408,6 +1555,7 @@ let autoRefreshOn = false;
 
 function saveQuoteCodes() {
   localStorage.setItem(QUOTE_STORE_KEY, JSON.stringify(quoteCodes));
+  scheduleCloudSync();
 }
 // Determine market prefix: 0 = Shenzhen, 1 = Shanghai
 function secidFor(code) {
@@ -1577,6 +1725,7 @@ function loadFundEdits() {
 }
 function saveFundEdits() {
   localStorage.setItem(FUND_EDIT_KEY, JSON.stringify(fundEdits));
+  scheduleCloudSync();
 }
 function getFundEdit(code, field) {
   return (fundEdits[code] && fundEdits[code][field] !== undefined) ? fundEdits[code][field] : '';
@@ -2113,6 +2262,7 @@ function initNotesTable() {
         map[c.getAttribute('data-notes')] = c.innerHTML;
       });
       localStorage.setItem('portfolio_notes_v2', JSON.stringify(map));
+      scheduleCloudSync();
     });
   });
 }
@@ -2229,6 +2379,7 @@ function loadDiscData() {
 }
 function saveDiscData() {
   localStorage.setItem(DISC_STORE_KEY, JSON.stringify(discData));
+  scheduleCloudSync();
 }
 
 function switchDisciplineTab(btn, section) {
@@ -2510,6 +2661,289 @@ function initDiscipline() {
   renderHistory();
 }
 
+// ============ Cloud Sync (GitHub API) ============
+const CLOUD_CONFIG = {
+  owner: 'zhaojasonar-zjj',
+  repo: 'High-Dividend-Strategy',
+  path: 'data/portfolio.json',
+  branch: 'main'
+};
+const TOKEN_KEY = 'github_pat_token';
+let cloudSHA = null;
+let cloudSyncTimer = null;
+let cloudSyncing = false;
+let cloudLoading = false;
+let cloudEnabled = !!localStorage.getItem(TOKEN_KEY);
+
+function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+function setToken(token) {
+  localStorage.setItem(TOKEN_KEY, token);
+  cloudEnabled = !!token.trim();
+  updateCloudStatus();
+}
+function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+  cloudEnabled = false;
+  cloudSHA = null;
+  updateCloudStatus();
+}
+function getCloudHeaders() {
+  return {
+    'Authorization': 'Bearer ' + getToken(),
+    'Accept': 'application/vnd.github+json',
+    'Content-Type': 'application/json'
+  };
+}
+
+// Collect ALL locally stored data into one object
+function collectAllData() {
+  return {
+    version: 3,
+    savedAt: new Date().toISOString(),
+    main: DATA,
+    quoteCodes: quoteCodes,
+    fundEdits: fundEdits,
+    notes: JSON.parse(localStorage.getItem('portfolio_notes_v2') || '{}'),
+    discipline: JSON.parse(localStorage.getItem(DISC_STORE_KEY) || '{}')
+  };
+}
+
+// Distribute cloud data back to all local stores + in-memory variables
+function distributeCloudData(cloudData) {
+  let changed = false;
+  if (cloudData.main) {
+    DATA = cloudData.main;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
+    changed = true;
+  }
+  if (cloudData.quoteCodes) {
+    quoteCodes = cloudData.quoteCodes;
+    localStorage.setItem(QUOTE_STORE_KEY, JSON.stringify(quoteCodes));
+    changed = true;
+  }
+  if (cloudData.fundEdits) {
+    fundEdits = cloudData.fundEdits;
+    localStorage.setItem(FUND_EDIT_KEY, JSON.stringify(fundEdits));
+    changed = true;
+  }
+  if (cloudData.notes) {
+    localStorage.setItem('portfolio_notes_v2', JSON.stringify(cloudData.notes));
+    changed = true;
+  }
+  if (cloudData.discipline) {
+    localStorage.setItem(DISC_STORE_KEY, JSON.stringify(cloudData.discipline));
+    discData = cloudData.discipline;
+    // Ensure all fields exist
+    if (!discData.decLog) discData.decLog = [];
+    if (!discData.questScores) discData.questScores = {};
+    if (!discData.questPeriod) discData.questPeriod = '';
+    if (!discData.history) discData.history = [];
+    changed = true;
+  }
+  return changed;
+}
+
+// Load from GitHub
+async function cloudLoad() {
+  if (!cloudEnabled) return { success: false, reason: 'no-token' };
+  setCloudStatus('正在从云端加载…', 'loading');
+  try {
+    const url = 'https://api.github.com/repos/' + CLOUD_CONFIG.owner + '/' + CLOUD_CONFIG.repo + '/contents/' + CLOUD_CONFIG.path + '?ref=' + CLOUD_CONFIG.branch;
+    const resp = await fetch(url, { headers: getCloudHeaders() });
+    if (resp.status === 404) {
+      cloudSHA = null;
+      setCloudStatus('云端无数据，首次保存将创建', 'offline');
+      return { success: false, reason: 'not-found' };
+    }
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    cloudSHA = data.sha;
+    const content = JSON.parse(atob(data.content.replace(/\n/g, '')));
+    return { success: true, data: content };
+  } catch(e) {
+    setCloudStatus('加载失败: ' + e.message, 'error');
+    return { success: false, reason: e.message };
+  }
+}
+
+// Save to GitHub
+async function cloudSave() {
+  if (!cloudEnabled) return false;
+  if (cloudSyncing) return false;
+  cloudSyncing = true;
+  setCloudStatus('正在保存到云端…', 'saving');
+  try {
+    const allData = collectAllData();
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(allData, null, 2))));
+    const url = 'https://api.github.com/repos/' + CLOUD_CONFIG.owner + '/' + CLOUD_CONFIG.repo + '/contents/' + CLOUD_CONFIG.path;
+    const body = {
+      message: '数据更新 ' + new Date().toLocaleString('zh-CN'),
+      content: content,
+      branch: CLOUD_CONFIG.branch
+    };
+    if (cloudSHA) body.sha = cloudSHA;
+    
+    const resp = await fetch(url, {
+      method: 'PUT',
+      headers: getCloudHeaders(),
+      body: JSON.stringify(body)
+    });
+    
+    if (resp.status === 409) {
+      // Conflict — another device pushed since we last loaded
+      setCloudStatus('冲突：数据已被其他设备更新，正在重新加载…', 'error');
+      cloudLoading = true;
+      const result = await cloudLoad();
+      if (result.success) {
+        distributeCloudData(result.data);
+        renderAll();
+        setCloudStatus('已合并云端数据 · ' + new Date(result.data.savedAt).toLocaleString('zh-CN'), 'synced');
+      }
+      cloudLoading = false;
+      cloudSyncing = false;
+      return false;
+    }
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.message || 'HTTP ' + resp.status);
+    }
+    const data = await resp.json();
+    cloudSHA = data.content.sha;
+    setCloudStatus('已保存 · ' + new Date().toLocaleString('zh-CN'), 'synced');
+    cloudSyncing = false;
+    return true;
+  } catch(e) {
+    setCloudStatus('保存失败: ' + e.message, 'error');
+    cloudSyncing = false;
+    return false;
+  }
+}
+
+// Debounced cloud sync — called from all local save functions
+function scheduleCloudSync() {
+  if (!cloudEnabled || cloudLoading) return;
+  if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
+  setCloudStatus('编辑中… 待同步', 'ready');
+  cloudSyncTimer = setTimeout(() => {
+    cloudSave();
+  }, 3000); // 3 second debounce
+}
+
+function setCloudStatus(text, state) {
+  const el = document.getElementById('cloud-status-text');
+  const dot = document.getElementById('cloud-dot');
+  if (el) el.textContent = text;
+  if (dot) dot.className = 'cloud-dot ' + state;
+}
+
+function updateCloudStatus() {
+  if (!cloudEnabled) {
+    setCloudStatus('未连接云端', 'offline');
+  } else {
+    setCloudStatus('已就约 · 编辑后自动同步', 'ready');
+  }
+}
+
+// Token modal
+function showTokenModal() {
+  document.getElementById('token-modal').classList.add('show');
+  const input = document.getElementById('token-input');
+  input.value = getToken();
+  setTimeout(() => input.focus(), 100);
+}
+function hideTokenModal() {
+  document.getElementById('token-modal').classList.remove('show');
+}
+function saveTokenFromModal() {
+  const token = document.getElementById('token-input').value.trim();
+  if (!token) {
+    alert('请输入有效的 GitHub Token');
+    return;
+  }
+  setToken(token);
+  hideTokenModal();
+  // Try to load from cloud immediately
+  cloudLoadAndRender();
+}
+function clearTokenFromModal() {
+  if (confirm('确定要清除 Token 并断开云端同步吗？\n\n本地数据不会被删除，仍可正常使用。\n重新输入 Token 即可恢复同步。')) {
+    clearToken();
+    hideTokenModal();
+  }
+}
+
+// Manual save button
+function manualCloudSave() {
+  if (!cloudEnabled) {
+    showTokenModal();
+    return;
+  }
+  // Cancel any pending debounce and save immediately
+  if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer = null; }
+  cloudSave();
+}
+
+// Load from cloud and re-render
+async function cloudLoadAndRender() {
+  if (!cloudEnabled) {
+    showTokenModal();
+    return;
+  }
+  cloudLoading = true;
+  const result = await cloudLoad();
+  if (result.success) {
+    const changed = distributeCloudData(result.data);
+    if (changed) {
+      renderAll();
+      // Also reload notes table content
+      const saved = localStorage.getItem('portfolio_notes_v2');
+      if (saved) {
+        try {
+          const map = JSON.parse(saved);
+          document.querySelectorAll('[data-notes]').forEach(cell => {
+            const key = cell.getAttribute('data-notes');
+            if (map[key] !== undefined) cell.innerHTML = map[key];
+          });
+        } catch(e) {}
+      }
+    }
+    setCloudStatus('已同步 · ' + new Date(result.data.savedAt).toLocaleString('zh-CN'), 'synced');
+  } else if (result.reason === 'no-token') {
+    showTokenModal();
+  }
+  cloudLoading = false;
+}
+
+// Init cloud sync on page load
+async function initCloudSync() {
+  if (!cloudEnabled) {
+    updateCloudStatus();
+    return;
+  }
+  cloudLoading = true;
+  // Try to load from cloud, re-render if data changed
+  const result = await cloudLoad();
+  if (result.success) {
+    const changed = distributeCloudData(result.data);
+    if (changed) {
+      renderAll();
+      // Reload notes table content
+      const saved = localStorage.getItem('portfolio_notes_v2');
+      if (saved) {
+        try {
+          const map = JSON.parse(saved);
+          document.querySelectorAll('[data-notes]').forEach(cell => {
+            const key = cell.getAttribute('data-notes');
+            if (map[key] !== undefined) cell.innerHTML = map[key];
+          });
+        } catch(e) {}
+      }
+    }
+    setCloudStatus('已同步 · ' + new Date(result.data.savedAt).toLocaleString('zh-CN'), 'synced');
+  }
+  cloudLoading = false;
+}
+
 // ============ Init ============
 function renderAll() {
   STOCK_KEYS.forEach(key => renderStockTable(key));
@@ -2526,7 +2960,10 @@ function renderAll() {
   calcKellyResults();
 }
 
+// Suppress cloud saves during initial load
+if (cloudEnabled) cloudLoading = true;
 renderAll();
+initCloudSync();
 </script>
 </body>
 </html>
