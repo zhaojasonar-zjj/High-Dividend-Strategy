@@ -2106,7 +2106,16 @@ async function fetchFundamentals() {
   setFundStatus('正在获取基本面数据…', 'loading');
   fundData = {};
   try {
-    const valMap = await fetchValuation(quoteCodes);
+    const [valMap, realTimePrices] = await Promise.all([
+      fetchValuation(quoteCodes),
+      fetchRealTimePrices(quoteCodes)
+    ]);
+    // Override CLOSE_PRICE with real-time price
+    quoteCodes.forEach(c => {
+      if (realTimePrices[c] != null && valMap[c]) {
+        valMap[c].CLOSE_PRICE = realTimePrices[c];
+      }
+    });
     const finPromises = quoteCodes.map(c => fetchFinance(c).catch(() => null));
     const finResults = await Promise.all(finPromises);
     const finMap = {};
@@ -2123,6 +2132,27 @@ async function fetchFundamentals() {
   } catch(e) {
     setFundStatus('获取基本面数据失败: ' + e.message, 'err');
   }
+}
+
+// Fetch real-time prices from Tencent API (same source as quote table)
+async function fetchRealTimePrices(codes) {
+  const tencentCodes = codes.map(tencentCode).join(',');
+  const resp = await fetch('https://qt.gtimg.cn/q=' + tencentCodes);
+  const buf = await resp.arrayBuffer();
+  const text = new TextDecoder('gbk').decode(buf);
+  const map = {};
+  text.split(';').forEach(line => {
+    line = line.trim();
+    if (!line) return;
+    const m = line.match(/v_(\w+)="([^"]*)"/);
+    if (!m) return;
+    const parts = m[2].split('~');
+    if (parts.length < 50) return;
+    const code = parts[2];
+    const price = parseFloat(parts[3]);
+    if (!isNaN(price) && price > 0) map[code] = price;
+  });
+  return map;
 }
 
 // ---- Number formatting helpers ----
