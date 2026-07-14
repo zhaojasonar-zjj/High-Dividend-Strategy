@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-14T00:05:50.594Z",
+  "savedAt": "2026-07-14T05:20:51.703Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -163,6 +163,16 @@
         "basis": "战略使命优先；保存实力，健康活着，留在赌桌，享受复苏",
         "emotion": "1",
         "expected": "总有再次机会，分红再投资不能跑偏",
+        "actual": "",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
+        "expected": "",
         "actual": "",
         "review": ""
       }
