@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-15T14:31:08.787Z",
+  "savedAt": "2026-07-15T14:31:16.037Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -216,7 +216,7 @@
       },
       {
         "date": "2026-7-15",
-        "stock": "",
+        "stock": "分红",
         "action": "",
         "basis": "",
         "emotion": "",
