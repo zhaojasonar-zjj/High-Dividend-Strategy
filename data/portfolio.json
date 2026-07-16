@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-16T15:17:49.051Z",
+  "savedAt": "2026-07-16T15:18:36.676Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -230,6 +230,16 @@
         "basis": "适当降低仓位集中度，减轻压力，对冲焦虑，从而做到“在垃圾时间里，陪顶级消费龙头慢慢变富”",
         "emotion": "1",
         "expected": "应对极端行情的备用金",
+        "actual": "",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
+        "expected": "",
         "actual": "",
         "review": ""
       }
