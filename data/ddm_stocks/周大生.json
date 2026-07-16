@@ -6,7 +6,7 @@
     "EPS0": 1.02,
     "D0": 0.9,
     "Payout0": 0.8855,
-    "costRate": 0.04,
+    "costRate": 0.035,
     "riskPremium": 0.02,
     "actualEPS1": 1.02,
     "actualPayout1": 0.8855
@@ -79,5 +79,5 @@
       "note": "品牌使用费涨价，自营电商稳增，金价下跌逆周期调节促销量"
     }
   ],
-  "lastUpdated": "2026-07-16T15:42:00.491Z"
+  "lastUpdated": "2026-07-16T15:43:48.679Z"
 }
