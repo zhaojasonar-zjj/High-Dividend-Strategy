@@ -8,8 +8,8 @@
     "Payout0": 0.8855,
     "costRate": 0.04,
     "riskPremium": 0.02,
-    "actualEPS1": 0.92,
-    "actualPayout1": 0.58
+    "actualEPS1": 1.02,
+    "actualPayout1": 0.8855
   },
   "scenarios": [
     {
@@ -79,5 +79,5 @@
       "note": "数据严重偏离乐观, L=0.3强烈反对乐观世界"
     }
   ],
-  "lastUpdated": "2026-07-16T09:15:50.709Z"
+  "lastUpdated": "2026-07-16T09:16:04.719Z"
 }
