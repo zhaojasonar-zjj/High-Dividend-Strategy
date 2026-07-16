@@ -1668,11 +1668,10 @@ function buildEngineTable() {
     const v0Row = document.createElement('tr');
     v0Row.className = s.cls;
     v0Row.innerHTML = `<td></td><td>前5年折现和</td>`;
-    v0Row.innerHTML += `<td colspan="5" class="calc-cell" id="pvSum_${si}"></td>`;
-    v0Row.innerHTML += `<td colspan="2"></td>`;
-    v0Row.innerHTML += `<td colspan="2"></td>`;
+    v0Row.innerHTML += `<td colspan="3" class="calc-cell" id="pvSum_${si}"></td>`;
     v0Row.innerHTML += `<td style="font-weight:700;color:#C00000;">V₀ =</td>`;
     v0Row.innerHTML += `<td class="gold-cell" id="v0_${si}"></td>`;
+    v0Row.innerHTML += `<td colspan="5"></td>`;
     tbody.appendChild(v0Row);
   });
 
