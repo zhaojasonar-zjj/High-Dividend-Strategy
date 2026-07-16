@@ -1,0 +1,1970 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>高股息红利股 DDM 概率定价分析模型</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f0f2f5;
+    color: #333;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ===== Header Wrap (sticky) ===== */
+  .header-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  /* ===== Sync Toolbar ===== */
+  .sync-toolbar {
+    background: #16385c;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .toolbar-left, .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .toolbar-logo {
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    margin-right: 4px;
+    white-space: nowrap;
+  }
+  .stock-selector-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stock-selector-wrap label {
+    color: rgba(255,255,255,0.7);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  #stockSelector {
+    padding: 5px 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: #1F4E79;
+    color: #fff;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    min-width: 120px;
+  }
+  #stockSelector option { background: #fff; color: #333; }
+  .toolbar-btn {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .toolbar-btn:hover { background: rgba(255,255,255,0.2); }
+  .toolbar-btn:active { transform: scale(0.96); }
+
+  /* Sync status indicator */
+  .sync-status {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 12px;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .sync-status.idle { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+  .sync-status.loading { background: #1a73e8; color: #fff; }
+  .sync-status.saving { background: #e8710a; color: #fff; }
+  .sync-status.synced { background: #1e7e34; color: #fff; }
+  .sync-status.conflict { background: #dc3545; color: #fff; }
+  .sync-status.error { background: #dc3545; color: #fff; }
+  .sync-status.local { background: #6c757d; color: #fff; }
+  .sync-status .spinner {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== Tab Navigation ===== */
+  .tab-bar {
+    display: flex;
+    background: #1F4E79;
+    padding: 0 20px;
+  }
+  .tab-btn {
+    color: rgba(255,255,255,0.7);
+    border: none;
+    background: transparent;
+    padding: 12px 28px;
+    font-size: 15px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+  .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  .tab-btn.active {
+    color: #fff;
+    border-bottom-color: #FFD700;
+    font-weight: 600;
+  }
+  .tab-content { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  .tab-content.active { display: block; }
+
+  /* ===== Cover Page ===== */
+  .cover-hero {
+    background: linear-gradient(135deg, #1F4E79 0%, #2E75B6 100%);
+    color: #fff;
+    padding: 48px 40px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 28px;
+    box-shadow: 0 4px 20px rgba(31,78,121,0.3);
+  }
+  .cover-hero h1 { font-size: 32px; margin-bottom: 12px; letter-spacing: 2px; }
+  .cover-hero p { font-size: 16px; opacity: 0.9; }
+  .cover-section {
+    background: #fff;
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .cover-section h2 {
+    color: #1F4E79;
+    font-size: 18px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #D6E4F0;
+  }
+  .cover-section table { width: 100%; border-collapse: collapse; }
+  .cover-section td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+  }
+  .cover-section td:first-child {
+    font-weight: 600;
+    color: #1F4E79;
+    white-space: nowrap;
+    width: 160px;
+  }
+  .cover-section td:nth-child(2) { color: #555; }
+  .color-legend { display: flex; gap: 24px; flex-wrap: wrap; }
+  .color-item { display: flex; align-items: center; gap: 8px; }
+  .color-swatch {
+    width: 24px; height: 24px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
+
+  /* ===== Model Section ===== */
+  .model-section {
+    background: #fff;
+    border-radius: 10px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+  .section-header {
+    background: #1F4E79;
+    color: #fff;
+    padding: 16px 24px;
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .sub-header {
+    background: #D6E4F0;
+    color: #1F4E79;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .section-body { padding: 20px 24px; }
+
+  /* ===== Tables ===== */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .data-table th {
+    background: #2E75B6;
+    color: #fff;
+    padding: 8px 10px;
+    text-align: center;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .data-table td {
+    padding: 8px 10px;
+    text-align: center;
+    border: 1px solid #e0e0e0;
+  }
+  .data-table td.label-col {
+    text-align: left;
+    font-weight: 600;
+    width: 120px;
+  }
+  .scen-conservative { background: #FCE4EC; }
+  .scen-neutral { background: #FFF3E0; }
+  .scen-optimistic { background: #E8F5E9; }
+  .scen-none { background: #F0F0F0; }
+
+  /* Input cells */
+  input[type="number"], input[type="text"] {
+    width: 100%;
+    padding: 6px 8px;
+    border: 2px solid #FFD700;
+    background: #FFFFCC;
+    border-radius: 4px;
+    font-size: 13px;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  input[type="text"] { text-align: left; }
+  input:focus {
+    outline: none;
+    border-color: #FF8C00;
+    box-shadow: 0 0 0 2px rgba(255,140,0,0.2);
+  }
+  .note-input {
+    text-align: left !important;
+    font-size: 11px !important;
+    background: #FAFAFA !important;
+    border-color: #ddd !important;
+    border-width: 1px !important;
+    border-style: solid !important;
+  }
+
+  .calc-cell { font-weight: 600; color: #333; }
+  .gold-cell {
+    background: #FFD700 !important;
+    color: #C00000;
+    font-weight: 700;
+  }
+
+  /* Param grid */
+  .param-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  .param-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .param-item label {
+    font-weight: 600;
+    color: #333;
+    white-space: nowrap;
+    font-size: 13px;
+  }
+  .param-item input { max-width: 130px; }
+  .param-item .display-value {
+    font-weight: 600;
+    color: #1F4E79;
+    padding: 6px 12px;
+    background: #E8F0FE;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  /* Decision box */
+  .decision-box {
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    margin: 12px 0;
+  }
+  .decision-buy {
+    background: #C6EFCE;
+    color: #006100;
+    border: 2px solid #00A651;
+  }
+  .decision-wait {
+    background: #FFC7CE;
+    color: #9C0006;
+    border: 2px solid #DC3545;
+  }
+
+  /* Summary rows */
+  .summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    margin: 6px 0;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #2E75B6;
+  }
+  .summary-row .label { font-weight: 600; color: #333; }
+  .summary-row .value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #C00000;
+  }
+
+  .warning-box {
+    background: #FFC7CE;
+    color: #9C0006;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    margin: 10px 0;
+    font-size: 13px;
+  }
+  .formula-note {
+    background: #F0F4F8;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #555;
+    margin-top: 10px;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* Judgment guide */
+  .judgment-table td { text-align: left; }
+  .judgment-table .L-col { text-align: center; font-weight: 700; }
+
+  /* ===== Modals ===== */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: #fff;
+    border-radius: 10px;
+    padding: 28px 32px;
+    max-width: 520px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .modal-box h3 {
+    color: #1F4E79;
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+  .modal-box p {
+    color: #555;
+    font-size: 13px;
+    margin-bottom: 14px;
+    line-height: 1.7;
+  }
+  .modal-box input[type="text"],
+  .modal-box input[type="password"] {
+    width: 100%;
+    margin-bottom: 12px;
+    text-align: left;
+    border-color: #ccc;
+    border-width: 1px;
+    background: #fff;
+  }
+  .modal-box label {
+    font-weight: 600;
+    font-size: 13px;
+    color: #333;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .modal-box a {
+    color: #2E75B6;
+    font-size: 12px;
+  }
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+  .modal-btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .modal-btn-primary {
+    background: #2E75B6;
+    color: #fff;
+  }
+  .modal-btn-primary:hover { background: #1F4E79; }
+  .modal-btn-danger {
+    background: #dc3545;
+    color: #fff;
+  }
+  .modal-btn-danger:hover { background: #c82333; }
+  .modal-btn-cancel {
+    background: #e9ecef;
+    color: #333;
+  }
+  .modal-btn-cancel:hover { background: #dae0e5; }
+
+  /* Snapshot list */
+  .snapshot-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 6px;
+  }
+  .snapshot-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+  }
+  .snapshot-item:last-child { border-bottom: none; }
+  .snapshot-item .snap-info {
+    flex: 1;
+  }
+  .snapshot-item .snap-label {
+    font-weight: 600;
+    color: #333;
+  }
+  .snapshot-item .snap-time {
+    font-size: 11px;
+    color: #888;
+  }
+  .snapshot-item .snap-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .snap-btn {
+    padding: 4px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    background: #fff;
+    color: #333;
+  }
+  .snap-btn:hover { background: #f0f0f0; }
+  .snap-btn.restore { color: #1e7e34; border-color: #1e7e34; }
+  .snap-btn.delete { color: #dc3545; border-color: #dc3545; }
+  .empty-hint {
+    padding: 20px;
+    text-align: center;
+    color: #999;
+    font-size: 13px;
+  }
+
+  /* Toast notification */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 2000;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: #1e7e34; }
+  .toast.error { background: #dc3545; }
+  .toast.info { background: #2E75B6; }
+
+  @media (max-width: 768px) {
+    .tab-content { padding: 12px; }
+    .param-grid { grid-template-columns: 1fr; }
+    .data-table { font-size: 11px; }
+    .data-table th, .data-table td { padding: 5px 4px; }
+    input[type="number"], input[type="text"] { font-size: 11px; padding: 4px; }
+    .sync-toolbar { padding: 6px 12px; }
+    .toolbar-logo { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Sticky Header: Toolbar + Tabs ===== -->
+<div class="header-wrap">
+  <!-- Sync Toolbar -->
+  <div class="sync-toolbar">
+    <div class="toolbar-left">
+      <span class="toolbar-logo">📊 DDM</span>
+      <div class="stock-selector-wrap">
+        <label>股票:</label>
+        <select id="stockSelector" onchange="onStockSelected()">
+          <option value="">加载中...</option>
+        </select>
+      </div>
+      <button class="toolbar-btn" onclick="showNewStockModal()" title="新建股票">＋ 新建</button>
+      <button class="toolbar-btn" onclick="confirmDeleteStock()" title="删除当前股票">－ 删除</button>
+    </div>
+    <div class="toolbar-right">
+      <span id="syncStatus" class="sync-status idle">📁 未连接</span>
+      <button class="toolbar-btn" onclick="saveNow()">💾 保存</button>
+      <button class="toolbar-btn" onclick="showSnapshotModal()">📸 快照</button>
+      <button class="toolbar-btn" onclick="showPatModal()">⚙️ 设置</button>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab(event,'cover')">封面与使用说明</button>
+    <button class="tab-btn" onclick="switchTab(event,'model')">分析模型</button>
+  </div>
+</div>
+
+<!-- ===== TAB 1: Cover ===== -->
+<div id="tab-cover" class="tab-content active">
+  <div class="cover-hero">
+    <h1>高股息红利股 DDM 概率定价分析模型</h1>
+    <p>基于EPS拆解 + 两阶段DDM + 贝叶斯似然比动态更新 + 隐含回报率决策</p>
+  </div>
+
+  <div class="cover-section">
+    <h2>一、模型架构</h2>
+    <table>
+      <tr><td>阶段一 (Y1-Y5)</td><td>人工手动预测绝对EPS和派息率，自动计算股息 D_t = EPS_t × Payout_t</td></tr>
+      <tr><td>阶段二 (Y6+)</td><td>戈登增长模型(单阶段DDM)，使用永续增长率 g₂ 和折现率 r</td></tr>
+    </table>
+  </div>
+
+  <div class="cover-section">
+    <h2>二、三大情景</h2>
+    <table>
+      <tr><td>保守情景</td><td>盈利承压、派息率下降，g₂=0%，r=8%。尾部风险与铁底测试</td></tr>
+      <tr><td>中性情景</td><td>稳健经营、分红政策连续，g₂=2%，r=7%。最大概率基准状态</td></tr>
+      <tr><td>乐观情景</td><td>量价齐升或资产荒拔估值，g₂=3%，r=5.5%。期权价值</td></tr>
+    </table>
+  </div>
+
+  <div class="cover-section">
+    <h2>三、贝叶斯似然比更新机制</h2>
+    <table>
+      <tr><td>Step1 铁律</td><td>在看财报前，先写好判定标准与似然比L赋值(防止事后合理化)</td></tr>
+      <tr><td>Step2</td><td>财报公布后，对照标准赋值L (L&gt;1支持, L&lt;1反对, L=1无信息增量)</td></tr>
+      <tr><td>Step3</td><td>后验概率自动计算: 后验_i = (L_i × 先验_i) / Σ(L_j × 先验_j)</td></tr>
+    </table>
+  </div>
+
+  <div class="cover-section">
+    <h2>四、决策规则</h2>
+    <table>
+      <tr><td>隐含回报率</td><td>E(R) = Σ(后验概率_i × 单情景隐含回报率_i)，单情景 ≈ D₁/P₀ + g₂</td></tr>
+      <tr><td>买入门槛</td><td>Hurdle Rate = 资金成本(如房贷/理财) + 风险补偿(2%)</td></tr>
+      <tr><td>决策规则</td><td>E(R) &gt; 买入门槛 → 坚定买入; 否则观望或减仓</td></tr>
+    </table>
+  </div>
+
+  <div class="cover-section">
+    <h2>五、云端同步</h2>
+    <table>
+      <tr><td>数据存储</td><td>每股独立文件，存在 GitHub 仓库 <code>High-Dividend-Strategy/data/ddm_stocks/</code></td></tr>
+      <tr><td>安全认证</td><td>Fine-grained PAT，仅授权目标仓库读写，存浏览器 localStorage</td></tr>
+      <tr><td>自动保存</td><td>编辑后 3 秒自动同步到云端，状态栏实时显示</td></tr>
+      <tr><td>版本回溯</td><td>每次保存产生 Git commit，可在 GitHub 查看完整历史</td></tr>
+      <tr><td>命名快照</td><td>关键时点（如财报前）手动保存快照，存 <code>data/ddm_snapshots/</code></td></tr>
+      <tr><td>冲突检测</td><td>SHA 校验，远端有更新时提示加载最新</td></tr>
+    </table>
+  </div>
+
+  <div class="cover-section">
+    <h2>六、颜色说明</h2>
+    <div class="color-legend">
+      <div class="color-item"><div class="color-swatch" style="background:#FFFF00;"></div> 黄色 = 手动输入区</div>
+      <div class="color-item"><div class="color-swatch" style="background:#FFD700;"></div> 金色 = 自动计算关键结果</div>
+      <div class="color-item"><div class="color-swatch" style="background:#C6EFCE;"></div> 绿色 = 最终决策输出</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB 2: Model ===== -->
+<div id="tab-model" class="tab-content">
+
+  <!-- ========== Section 1: 核心预测引擎 ========== -->
+  <div class="model-section">
+    <div class="section-header">核心预测引擎：EPS拆解 + 两阶段DDM绝对估值</div>
+
+    <div class="sub-header">▎一、基本参数（黄色=手动输入）</div>
+    <div class="section-body">
+      <div class="param-grid">
+        <div class="param-item"><label>股票名称</label><span class="display-value" id="stockNameDisplay">—</span></div>
+        <div class="param-item"><label>当前股价 P₀ (元)</label><input type="number" id="P0" value="10" step="0.01"></div>
+        <div class="param-item"><label>基准期 EPS₀ (元)</label><input type="number" id="EPS0" value="1" step="0.01"></div>
+        <div class="param-item"><label>基准期 D₀ (元)</label><input type="number" id="D0" value="0.7" step="0.01"></div>
+        <div class="param-item"><label>基准期派息率</label><input type="number" id="Payout0" value="0.7" step="0.01"></div>
+        <div class="param-item"><label>资金成本</label><input type="number" id="costRate" value="0.04" step="0.001"></div>
+        <div class="param-item"><label>风险补偿</label><input type="number" id="riskPremium" value="0.02" step="0.001"></div>
+        <div class="param-item"><label>买入门槛</label><span class="gold-cell" style="padding:6px 14px;border-radius:4px;" id="hurdleRate">6.00%</span></div>
+      </div>
+    </div>
+
+    <div class="sub-header">▎二、三情景预测表：前5年EPS与派息率 → 股息推导 → 两阶段DDM估值</div>
+    <div class="section-body" style="overflow-x:auto;">
+      <table class="data-table" id="engineTable">
+        <thead>
+          <tr>
+            <th>情景</th>
+            <th>预测维度</th>
+            <th>Y1</th><th>Y2</th><th>Y3</th><th>Y4</th><th>Y5</th>
+            <th>永续增长 g₂</th><th>折现率 r</th>
+            <th>D₅×(1+g₂)=D₆</th><th>终值P₅=D₆/(r-g₂)</th><th>终值折现=P₅/(1+r)⁵</th>
+          </tr>
+        </thead>
+        <tbody id="engineBody"></tbody>
+      </table>
+      <div class="formula-note">
+        D_t = EPS_t × 派息率_t | V₀ = Σ(D_t/(1+r)^t) + [D₅×(1+g₂)] / [(r-g₂)×(1+r)^5]
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== Section 2: 贝叶斯似然比矩阵 ========== -->
+  <div class="model-section">
+    <div class="section-header">贝叶斯似然比矩阵：预先判定标准 + 后验概率自动计算</div>
+
+    <div class="sub-header">▎一、预先判定标准（铁律: 在看财报前必须写好! 防止事后合理化）</div>
+    <div class="section-body">
+      <div class="warning-box">⚠️ 投资纪律: 标准一旦写定, 财报公布后必须严格对照执行, 不得临时修改!</div>
+      <table class="data-table judgment-table">
+        <thead>
+          <tr><th>情景</th><th>触发条件(基于Y1实际财报)</th><th>似然比L</th><th>L含义</th></tr>
+        </thead>
+        <tbody>
+          <tr class="scen-conservative"><td>保守</td><td>实际EPS₁ ≤ 0.95 且 派息率 ≤ 60%</td><td class="L-col">3</td><td>强烈支持保守</td></tr>
+          <tr class="scen-conservative"><td>保守</td><td>实际EPS₁ ∈ (0.95, 1.00] 且 派息率 &lt; 65%</td><td class="L-col">2</td><td>较强支持保守</td></tr>
+          <tr class="scen-neutral"><td>中性</td><td>实际EPS₁ ∈ (0.95, 1.05] 且 派息率 ≈ 70%</td><td class="L-col">1.5</td><td>较强支持中性</td></tr>
+          <tr class="scen-neutral"><td>中性</td><td>实际EPS₁ ∈ (1.00, 1.08] 且 派息率 ∈ [65%,75%]</td><td class="L-col">1.2</td><td>温和支持中性</td></tr>
+          <tr class="scen-optimistic"><td>乐观</td><td>实际EPS₁ &gt; 1.05 且 派息率 ≥ 75%</td><td class="L-col">4</td><td>强烈支持乐观</td></tr>
+          <tr class="scen-optimistic"><td>乐观</td><td>实际EPS₁ &gt; 1.05 且 派息率 ∈ [70%,75%)</td><td class="L-col">2.5</td><td>较强支持乐观</td></tr>
+          <tr class="scen-none"><td>无信息</td><td>数据模糊或介于情景之间</td><td class="L-col">1</td><td>无信息增量</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="sub-header">▎二、似然比赋值区（财报后, 对照标准在黄色区填入L值）</div>
+    <div class="section-body">
+      <div class="param-grid" style="margin-bottom:16px;">
+        <div class="param-item"><label>实际Y1 EPS₁ (元)</label><input type="number" id="actualEPS1" value="0.92" step="0.01"></div>
+        <div class="param-item"><label>实际Y1 派息率</label><input type="number" id="actualPayout1" value="0.58" step="0.01"></div>
+      </div>
+      <div id="judgmentHint" style="font-size:13px;color:#C00000;font-weight:600;margin-bottom:12px;"></div>
+
+      <table class="data-table" id="bayesTable">
+        <thead>
+          <tr>
+            <th>情景</th><th>先验概率</th><th>似然比L (手动)</th><th>似然加权 =L×先验</th><th>后验概率 (自动)</th><th>路径依赖备注</th>
+          </tr>
+        </thead>
+        <tbody id="bayesBody"></tbody>
+      </table>
+      <div class="formula-note">
+        后验_i = (L_i × 先验_i) / Σ(L_j × 先验_j) | L&gt;1支持 | L&lt;1反对 | L=1无信息增量
+      </div>
+      <div class="warning-box" style="margin-top:10px;">⚠️ 铁律: 必须先写判定标准再看数据填L值。严禁先看数据再改标准(事后合理化)!</div>
+    </div>
+  </div>
+
+  <!-- ========== Section 3: 隐含回报率与决策 ========== -->
+  <div class="model-section">
+    <div class="section-header">隐含回报率与决策输出</div>
+
+    <div class="sub-header">▎一、各情景隐含回报率 (自动引用上方数据)</div>
+    <div class="section-body" style="overflow-x:auto;">
+      <table class="data-table" id="returnTable">
+        <thead>
+          <tr>
+            <th>情景</th><th>后验概率</th><th>Y1股息D₁</th><th>当前股息率 =D₁/P₀</th><th>g₂</th><th>隐含回报率 ≈D₁/P₀+g₂</th>
+          </tr>
+        </thead>
+        <tbody id="returnBody"></tbody>
+      </table>
+    </div>
+
+    <div class="sub-header">▎二、加权隐含回报率与最终决策</div>
+    <div class="section-body">
+      <div class="summary-row">
+        <span class="label">加权隐含年化回报率 E(R)</span>
+        <span class="value" id="weightedReturn">—</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">买入门槛 (Hurdle Rate)</span>
+        <span class="value" id="hurdleDisplay">—</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">超额收益率 (E(R) - Hurdle)</span>
+        <span class="value" id="excessReturn">—</span>
+      </div>
+      <div class="decision-box" id="finalDecision">—</div>
+    </div>
+
+    <div class="sub-header">▎三、辅助: 各情景DDM绝对价值 vs 当前股价</div>
+    <div class="section-body" style="overflow-x:auto;">
+      <table class="data-table" id="ddmTable">
+        <thead>
+          <tr>
+            <th>情景</th><th>DDM价值V₀</th><th>当前股价P₀</th><th>安全边际 =(V₀-P₀)/P₀</th><th>后验概率</th><th>加权V₀ =V₀×后验</th>
+          </tr>
+        </thead>
+        <tbody id="ddmBody"></tbody>
+      </table>
+      <div class="summary-row" style="margin-top:12px;">
+        <span class="label">概率加权期望价值 E(V₀)</span>
+        <span class="value" id="weightedV0">—</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">当前股价</span>
+        <span class="value" id="currentPriceDisplay">—</span>
+      </div>
+      <div class="decision-box" id="valuationDecision">—</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== Modals ===== -->
+
+<!-- PAT Setup Modal -->
+<div id="patModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>⚙️ GitHub PAT 设置</h3>
+    <p>输入 Fine-grained PAT（仅授权 <code>High-Dividend-Strategy</code> 仓库的 Contents 读写权限）。PAT 存储在浏览器 localStorage，不会上传到任何服务器。</p>
+    <label>PAT Token</label>
+    <input type="password" id="patInput" placeholder="github_pat_..." autocomplete="off">
+    <p style="font-size:12px;color:#888;margin-top:8px;">
+      创建方式：GitHub → Settings → Developer settings → Fine-grained tokens → 只选 <code>High-Dividend-Strategy</code> 仓库 → 权限选 Contents: Read and write
+    </p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" onclick="closeModal('patModal')">取消</button>
+      <button class="modal-btn modal-btn-danger" onclick="clearPat()">清除PAT</button>
+      <button class="modal-btn modal-btn-primary" onclick="savePat()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Stock Modal -->
+<div id="newStockModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>＋ 新建股票</h3>
+    <p>输入股票名称，将创建新的分析文件。默认使用示例数据，可随后修改。</p>
+    <label>股票名称</label>
+    <input type="text" id="newStockName" placeholder="如：周大生" autocomplete="off">
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" onclick="closeModal('newStockModal')">取消</button>
+      <button class="modal-btn modal-btn-primary" onclick="createStock()">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- Snapshot Modal -->
+<div id="snapshotModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>📸 命名快照</h3>
+    <p>保存当前数据的命名快照（如"Q2财报前"），用于关键时点标记。快照独立存储，不影响主数据。</p>
+    <label>快照标签</label>
+    <input type="text" id="snapshotLabel" placeholder="如：Q2财报前" autocomplete="off">
+    <div class="modal-actions" style="margin-bottom:16px;">
+      <button class="modal-btn modal-btn-cancel" onclick="closeModal('snapshotModal')">关闭</button>
+      <button class="modal-btn modal-btn-primary" onclick="saveSnapshot()">保存快照</button>
+    </div>
+    <hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
+    <label>历史快照</label>
+    <div class="snapshot-list" id="snapshotList">
+      <div class="empty-hint">加载中...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Conflict Modal -->
+<div id="conflictModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3 style="color:#dc3545;">⚠️ 云端数据已更新</h3>
+    <p>检测到远端文件已被其他设备修改（SHA 不匹配）。请选择操作：</p>
+    <div class="modal-actions" style="flex-direction:column;gap:8px;">
+      <button class="modal-btn modal-btn-primary" style="width:100%;" onclick="resolveConflict('remote')">加载远端数据（丢弃本地改动）</button>
+      <button class="modal-btn modal-btn-danger" style="width:100%;" onclick="resolveConflict('local')">覆盖远端（保留本地改动）</button>
+      <button class="modal-btn modal-btn-cancel" style="width:100%;" onclick="closeModal('conflictModal')">稍后处理</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script>
+// ============================================================
+//  CONFIG
+// ============================================================
+const GITHUB = {
+  owner: 'zhaojasonar-zjj',
+  repo: 'High-Dividend-Strategy',
+  stocksDir: 'data/ddm_stocks',
+  snapshotsDir: 'data/ddm_snapshots',
+  apiBase: 'https://api.github.com'
+};
+
+// ============================================================
+//  DEFAULT DATA
+// ============================================================
+const DEFAULT_PARAMS = {
+  P0: 10, EPS0: 1, D0: 0.7, Payout0: 0.7,
+  costRate: 0.04, riskPremium: 0.02,
+  actualEPS1: 0.92, actualPayout1: 0.58
+};
+
+function getDefaultScenarios() {
+  return [
+    { name: '保守', cls: 'scen-conservative', g2: 0, r: 0.08,
+      eps: [0.9, 0.85, 0.85, 0.85, 0.85], payout: [0.6, 0.6, 0.5, 0.5, 0.5],
+      prior: 0.2, L: 3,
+      note: 'EPS₁=0.92≤0.95且派息率58%≤60%, 触发保守L=3.0。路径依赖: 若Y2持续恶化, 需下修后续EPS及g₂' },
+    { name: '中性', cls: 'scen-neutral', g2: 0.02, r: 0.07,
+      eps: [1.03, 1.06, 1.1, 1.13, 1.15], payout: [0.7, 0.7, 0.7, 0.7, 0.7],
+      prior: 0.6, L: 0.5,
+      note: '数据偏离中性, L<1反对中性世界' },
+    { name: '乐观', cls: 'scen-optimistic', g2: 0.03, r: 0.055,
+      eps: [1.08, 1.18, 1.25, 1.35, 1.4], payout: [0.75, 0.8, 0.8, 0.85, 0.85],
+      prior: 0.2, L: 0.3,
+      note: '数据严重偏离乐观, L=0.3强烈反对乐观世界' }
+  ];
+}
+
+// ============================================================
+//  STATE
+// ============================================================
+let scenarios = getDefaultScenarios();
+let currentStockName = null;      // Currently selected stock
+let cloudSha = null;               // SHA of current file on GitHub
+let cloudLoading = false;          // Suppress auto-save during cloud load
+let saveTimer = null;              // Debounce timer for auto-save
+let stockList = [];                // Cached list of stock names
+let pendingConflictData = null;    // Data for conflict resolution
+const PAT_KEY = 'ddm_github_pat';
+const LOCAL_DATA_KEY = 'ddm_local_data'; // Fallback for no-PAT mode
+
+// ============================================================
+//  UTILITIES
+// ============================================================
+function fmt(v, decimals = 2) {
+  if (v === null || v === undefined || isNaN(v)) return '—';
+  return Number(v).toFixed(decimals);
+}
+function fmtPct(v, decimals = 2) {
+  if (v === null || v === undefined || isNaN(v)) return '—';
+  return (Number(v) * 100).toFixed(decimals) + '%';
+}
+function num(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function setSyncStatus(status, text) {
+  const el = document.getElementById('syncStatus');
+  const labels = {
+    idle: '📁 未连接',
+    loading: '<span class="spinner"></span> 加载中',
+    saving: '<span class="spinner"></span> 保存中',
+    synced: '✅ 已同步',
+    conflict: '⚠️ 冲突',
+    error: '❌ 失败',
+    local: '📁 仅本地'
+  };
+  el.className = 'sync-status ' + status;
+  el.innerHTML = text || labels[status] || status;
+}
+
+// UTF-8 safe base64
+function utf8ToBase64(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function base64ToUtf8(b64) {
+  return decodeURIComponent(escape(atob(b64)));
+}
+
+// ============================================================
+//  TAB SWITCHING
+// ============================================================
+function switchTab(evt, tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  evt.target.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+// ============================================================
+//  MODAL HELPERS
+// ============================================================
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ============================================================
+//  PAT MANAGEMENT
+// ============================================================
+function getPat() { return localStorage.getItem(PAT_KEY) || ''; }
+function hasPat() { return !!getPat(); }
+
+function showPatModal() {
+  document.getElementById('patInput').value = getPat();
+  openModal('patModal');
+}
+
+function savePat() {
+  const pat = document.getElementById('patInput').value.trim();
+  if (!pat) { showToast('请输入 PAT', 'error'); return; }
+  localStorage.setItem(PAT_KEY, pat);
+  closeModal('patModal');
+  showToast('PAT 已保存', 'success');
+  initCloudSync();
+}
+
+function clearPat() {
+  localStorage.removeItem(PAT_KEY);
+  closeModal('patModal');
+  showToast('PAT 已清除，切换到仅本地模式', 'info');
+  setSyncStatus('local');
+  // Reload stock list as empty
+  stockList = [];
+  renderStockSelector();
+}
+
+// ============================================================
+//  GITHUB API
+// ============================================================
+async function githubGet(path) {
+  const url = `${GITHUB.apiBase}/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${path}?ref=main`;
+  const resp = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${getPat()}`,
+      'Accept': 'application/vnd.github+json'
+    }
+  });
+  if (resp.status === 404) return null;
+  if (resp.status === 401) throw new Error('PAT 无效或已过期');
+  if (!resp.ok) throw new Error(`GitHub API ${resp.status}: ${resp.statusText}`);
+  return resp.json();
+}
+
+async function githubPut(path, content, sha, message) {
+  const url = `${GITHUB.apiBase}/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${path}`;
+  const body = {
+    message: message,
+    content: utf8ToBase64(content),
+    branch: 'main'
+  };
+  if (sha) body.sha = sha;
+
+  const resp = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${getPat()}`,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (resp.status === 409) throw new Error('CONFLICT');
+  if (resp.status === 401) throw new Error('PAT 无效或已过期');
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(`GitHub API ${resp.status}: ${err.message || resp.statusText}`);
+  }
+  return resp.json();
+}
+
+async function githubList(dirPath) {
+  const url = `${GITHUB.apiBase}/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${dirPath}?ref=main`;
+  const resp = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${getPat()}`,
+      'Accept': 'application/vnd.github+json'
+    }
+  });
+  if (resp.status === 404) return [];
+  if (resp.status === 401) throw new Error('PAT 无效或已过期');
+  if (!resp.ok) throw new Error(`GitHub API ${resp.status}: ${resp.statusText}`);
+  return resp.json();
+}
+
+async function githubDelete(path, sha, message) {
+  const url = `${GITHUB.apiBase}/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${path}`;
+  const resp = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${getPat()}`,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ message, sha, branch: 'main' })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(`Delete failed: ${err.message || resp.statusText}`);
+  }
+  return resp.json();
+}
+
+// ============================================================
+//  DATA SERIALIZATION
+// ============================================================
+function serializeState() {
+  return {
+    version: 1,
+    stockName: currentStockName,
+    params: {
+      P0: num('P0'),
+      EPS0: num('EPS0'),
+      D0: num('D0'),
+      Payout0: num('Payout0'),
+      costRate: num('costRate'),
+      riskPremium: num('riskPremium'),
+      actualEPS1: num('actualEPS1'),
+      actualPayout1: num('actualPayout1')
+    },
+    scenarios: scenarios.map(s => ({
+      name: s.name,
+      g2: s.g2,
+      r: s.r,
+      eps: [...s.eps],
+      payout: [...s.payout],
+      prior: s.prior,
+      L: s.L,
+      note: s.note
+    })),
+    lastUpdated: new Date().toISOString()
+  };
+}
+
+function deserializeState(data) {
+  cloudLoading = true;
+
+  // Set params
+  const p = data.params || {};
+  if (document.getElementById('P0')) {
+    document.getElementById('P0').value = p.P0 ?? DEFAULT_PARAMS.P0;
+    document.getElementById('EPS0').value = p.EPS0 ?? DEFAULT_PARAMS.EPS0;
+    document.getElementById('D0').value = p.D0 ?? DEFAULT_PARAMS.D0;
+    document.getElementById('Payout0').value = p.Payout0 ?? DEFAULT_PARAMS.Payout0;
+    document.getElementById('costRate').value = p.costRate ?? DEFAULT_PARAMS.costRate;
+    document.getElementById('riskPremium').value = p.riskPremium ?? DEFAULT_PARAMS.riskPremium;
+    document.getElementById('actualEPS1').value = p.actualEPS1 ?? DEFAULT_PARAMS.actualEPS1;
+    document.getElementById('actualPayout1').value = p.actualPayout1 ?? DEFAULT_PARAMS.actualPayout1;
+  }
+
+  // Update scenarios
+  const loaded = data.scenarios || getDefaultScenarios();
+  loaded.forEach((s, i) => {
+    if (i < scenarios.length) {
+      scenarios[i].g2 = s.g2;
+      scenarios[i].r = s.r;
+      scenarios[i].eps = [...s.eps];
+      scenarios[i].payout = [...s.payout];
+      scenarios[i].prior = s.prior;
+      scenarios[i].L = s.L;
+      scenarios[i].note = s.note || scenarios[i].note;
+    }
+  });
+
+  // Rebuild tables
+  buildEngineTable();
+  buildBayesTable();
+
+  // Update display
+  document.getElementById('stockNameDisplay').textContent = currentStockName || '—';
+
+  // Recalculate
+  updateJudgmentHint();
+  calculateAll();
+
+  cloudLoading = false;
+}
+
+// ============================================================
+//  STOCK MANAGEMENT
+// ============================================================
+function renderStockSelector() {
+  const sel = document.getElementById('stockSelector');
+  if (stockList.length === 0) {
+    sel.innerHTML = '<option value="">（无股票）</option>';
+  } else {
+    sel.innerHTML = stockList.map(name =>
+      `<option value="${name}" ${name === currentStockName ? 'selected' : ''}>${name}</option>`
+    ).join('');
+  }
+}
+
+async function loadStockList() {
+  if (!hasPat()) {
+    setSyncStatus('local');
+    // Load from localStorage
+    const local = JSON.parse(localStorage.getItem(LOCAL_DATA_KEY) || '{}');
+    stockList = Object.keys(local);
+    if (stockList.length > 0 && !currentStockName) {
+      currentStockName = stockList[0];
+      loadStockFromLocal();
+    } else if (stockList.length === 0) {
+      // First time: create default stock
+      currentStockName = '示例高股息股';
+      stockList = [currentStockName];
+      saveToLocal();
+      loadStockFromLocal();
+    }
+    renderStockSelector();
+    return;
+  }
+
+  try {
+    setSyncStatus('loading');
+    const files = await githubList(GITHUB.stocksDir);
+    stockList = files
+      .filter(f => f.name.endsWith('.json'))
+      .map(f => f.name.replace(/\.json$/, ''));
+    if (stockList.length === 0) {
+      // First time on cloud: create default
+      currentStockName = '示例高股息股';
+      stockList = [currentStockName];
+      await saveCurrentStockToCloud('DDM: 初始化默认股票');
+    } else if (!currentStockName || !stockList.includes(currentStockName)) {
+      currentStockName = stockList[0];
+    }
+    renderStockSelector();
+    await loadStock(currentStockName);
+  } catch (e) {
+    console.error('loadStockList error:', e);
+    setSyncStatus('error', '❌ 加载失败');
+    showToast('加载股票列表失败: ' + e.message, 'error');
+  }
+}
+
+async function loadStock(name) {
+  if (!name) return;
+
+  // Save current stock first if dirty
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    await saveCurrentStock();
+  }
+
+  currentStockName = name;
+
+  if (!hasPat()) {
+    loadStockFromLocal();
+    return;
+  }
+
+  try {
+    setSyncStatus('loading');
+    const path = `${GITHUB.stocksDir}/${name}.json`;
+    const file = await githubGet(path);
+    if (file) {
+      const data = JSON.parse(base64ToUtf8(file.content));
+      cloudSha = file.sha;
+      deserializeState(data);
+      setSyncStatus('synced');
+    } else {
+      // File doesn't exist: use default data
+      cloudSha = null;
+      deserializeState({ stockName: name, params: DEFAULT_PARAMS, scenarios: getDefaultScenarios() });
+      setSyncStatus('idle', '📝 新股票');
+    }
+    document.getElementById('stockNameDisplay').textContent = name;
+  } catch (e) {
+    console.error('loadStock error:', e);
+    setSyncStatus('error', '❌ 加载失败');
+    showToast('加载股票失败: ' + e.message, 'error');
+  }
+}
+
+function loadStockFromLocal() {
+  const local = JSON.parse(localStorage.getItem(LOCAL_DATA_KEY) || '{}');
+  const data = local[currentStockName];
+  if (data) {
+    deserializeState(data);
+  } else {
+    deserializeState({ stockName: currentStockName, params: DEFAULT_PARAMS, scenarios: getDefaultScenarios() });
+    saveToLocal();
+  }
+  document.getElementById('stockNameDisplay').textContent = currentStockName;
+  setSyncStatus('local');
+}
+
+function onStockSelected() {
+  const sel = document.getElementById('stockSelector');
+  const name = sel.value;
+  if (name && name !== currentStockName) {
+    loadStock(name);
+  }
+}
+
+async function showNewStockModal() {
+  document.getElementById('newStockName').value = '';
+  openModal('newStockModal');
+  setTimeout(() => document.getElementById('newStockName').focus(), 100);
+}
+
+async function createStock() {
+  const name = document.getElementById('newStockName').value.trim();
+  if (!name) { showToast('请输入股票名称', 'error'); return; }
+  if (stockList.includes(name)) { showToast('该股票已存在', 'error'); return; }
+  // Avoid path-unsafe characters
+  if (/[\/\\:*?"<>|]/.test(name)) { showToast('名称不能包含 / \\ : * ? " < > |', 'error'); return; }
+
+  closeModal('newStockModal');
+
+  // Save current stock first
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    await saveCurrentStock();
+  }
+
+  // Switch to new stock with default data
+  currentStockName = name;
+  cloudSha = null;
+  cloudLoading = true;
+  scenarios = getDefaultScenarios();
+  document.getElementById('P0').value = DEFAULT_PARAMS.P0;
+  document.getElementById('EPS0').value = DEFAULT_PARAMS.EPS0;
+  document.getElementById('D0').value = DEFAULT_PARAMS.D0;
+  document.getElementById('Payout0').value = DEFAULT_PARAMS.Payout0;
+  document.getElementById('costRate').value = DEFAULT_PARAMS.costRate;
+  document.getElementById('riskPremium').value = DEFAULT_PARAMS.riskPremium;
+  document.getElementById('actualEPS1').value = DEFAULT_PARAMS.actualEPS1;
+  document.getElementById('actualPayout1').value = DEFAULT_PARAMS.actualPayout1;
+  document.getElementById('stockNameDisplay').textContent = name;
+  buildEngineTable();
+  buildBayesTable();
+  updateJudgmentHint();
+  calculateAll();
+  cloudLoading = false;
+
+  stockList.push(name);
+  stockList.sort();
+  renderStockSelector();
+
+  // Save new stock
+  await saveCurrentStock();
+
+  showToast(`已创建股票: ${name}`, 'success');
+}
+
+async function confirmDeleteStock() {
+  if (!currentStockName) { showToast('没有选中的股票', 'error'); return; }
+  if (stockList.length <= 1) { showToast('至少保留一个股票', 'error'); return; }
+  if (!confirm(`确定删除「${currentStockName}」？此操作不可撤销。`)) return;
+
+  const name = currentStockName;
+
+  if (hasPat() && cloudSha) {
+    try {
+      setSyncStatus('saving');
+      await githubDelete(`${GITHUB.stocksDir}/${name}.json`, cloudSha, `DDM: 删除股票 ${name}`);
+      cloudSha = null;
+    } catch (e) {
+      showToast('删除失败: ' + e.message, 'error');
+      setSyncStatus('error', '❌ 删除失败');
+      return;
+    }
+  } else {
+    const local = JSON.parse(localStorage.getItem(LOCAL_DATA_KEY) || '{}');
+    delete local[name];
+    localStorage.setItem(LOCAL_DATA_KEY, JSON.stringify(local));
+  }
+
+  stockList = stockList.filter(n => n !== name);
+  renderStockSelector();
+  showToast(`已删除: ${name}`, 'success');
+
+  // Load next available stock
+  currentStockName = stockList[0];
+  await loadStock(currentStockName);
+}
+
+// ============================================================
+//  SAVE
+// ============================================================
+function saveToLocal() {
+  if (!currentStockName) return;
+  const local = JSON.parse(localStorage.getItem(LOCAL_DATA_KEY) || '{}');
+  local[currentStockName] = serializeState();
+  localStorage.setItem(LOCAL_DATA_KEY, JSON.stringify(local));
+}
+
+async function saveCurrentStock() {
+  if (!currentStockName) return;
+  saveTimer = null;
+
+  // Always save to localStorage as backup
+  saveToLocal();
+
+  if (!hasPat()) {
+    setSyncStatus('local');
+    return;
+  }
+
+  await saveCurrentStockToCloud(`DDM: 更新 ${currentStockName} 数据`);
+}
+
+async function saveCurrentStockToCloud(message) {
+  if (!currentStockName) return;
+
+  try {
+    setSyncStatus('saving');
+    const data = serializeState();
+    const json = JSON.stringify(data, null, 2);
+    const path = `${GITHUB.stocksDir}/${currentStockName}.json`;
+    const result = await githubPut(path, json, cloudSha, message);
+    cloudSha = result.content.sha;
+    setSyncStatus('synced');
+  } catch (e) {
+    if (e.message === 'CONFLICT') {
+      setSyncStatus('conflict');
+      pendingConflictData = { path: `${GITHUB.stocksDir}/${currentStockName}.json` };
+      openModal('conflictModal');
+    } else {
+      console.error('Save error:', e);
+      setSyncStatus('error', '❌ 保存失败');
+      showToast('保存失败: ' + e.message, 'error');
+    }
+  }
+}
+
+async function saveNow() {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  await saveCurrentStock();
+  if (hasPat()) showToast('已同步到云端', 'success');
+  else showToast('已保存到本地', 'info');
+}
+
+// ============================================================
+//  CONFLICT RESOLUTION
+// ============================================================
+async function resolveConflict(choice) {
+  closeModal('conflictModal');
+  if (choice === 'remote') {
+    // Load remote data
+    try {
+      setSyncStatus('loading');
+      const file = await githubGet(pendingConflictData.path);
+      if (file) {
+        const data = JSON.parse(base64ToUtf8(file.content));
+        cloudSha = file.sha;
+        deserializeState(data);
+        setSyncStatus('synced');
+        showToast('已加载远端数据', 'success');
+      }
+    } catch (e) {
+      showToast('加载远端数据失败: ' + e.message, 'error');
+      setSyncStatus('error');
+    }
+  } else if (choice === 'local') {
+    // Force push local data (clear SHA to skip conflict check)
+    cloudSha = null;
+    await saveCurrentStockToCloud(`DDM: 覆盖远端 ${currentStockName} 数据`);
+    showToast('已覆盖远端数据', 'success');
+  }
+  pendingConflictData = null;
+}
+
+// ============================================================
+//  SNAPSHOTS
+// ============================================================
+async function showSnapshotModal() {
+  document.getElementById('snapshotLabel').value = '';
+  openModal('snapshotModal');
+  await loadSnapshotList();
+}
+
+async function saveSnapshot() {
+  const label = document.getElementById('snapshotLabel').value.trim();
+  if (!label) { showToast('请输入快照标签', 'error'); return; }
+  if (!currentStockName) { showToast('请先选择股票', 'error'); return; }
+
+  // Avoid path-unsafe characters in label
+  const safeLabel = label.replace(/[\/\\:*?"<>|]/g, '_');
+  const ts = new Date();
+  const tsStr = ts.getFullYear() +
+    String(ts.getMonth()+1).padStart(2,'0') +
+    String(ts.getDate()).padStart(2,'0') +
+    String(ts.getHours()).padStart(2,'0') +
+    String(ts.getMinutes()).padStart(2,'0') +
+    String(ts.getSeconds()).padStart(2,'0');
+  const fileName = `${currentStockName}_${tsStr}_${safeLabel}.json`;
+  const path = `${GITHUB.snapshotsDir}/${fileName}`;
+
+  const snapData = serializeState();
+  snapData.snapshotMeta = {
+    stockName: currentStockName,
+    label: label,
+    createdAt: ts.toISOString()
+  };
+
+  if (hasPat()) {
+    try {
+      setSyncStatus('saving');
+      await githubPut(path, JSON.stringify(snapData, null, 2), null, `DDM: 保存快照 ${currentStockName} - ${label}`);
+      setSyncStatus('synced');
+      showToast(`快照已保存至云端: ${label}`, 'success');
+    } catch (e) {
+      setSyncStatus('error', '❌ 快照失败');
+      showToast('保存快照失败: ' + e.message, 'error');
+      return;
+    }
+  } else {
+    // Local snapshot
+    const localSnaps = JSON.parse(localStorage.getItem('ddm_local_snapshots') || '[]');
+    localSnaps.push({ name: fileName, data: snapData });
+    localStorage.setItem('ddm_local_snapshots', JSON.stringify(localSnaps));
+    showToast(`快照已保存至本地: ${label}`, 'success');
+  }
+
+  // Refresh snapshot list
+  await loadSnapshotList();
+  document.getElementById('snapshotLabel').value = '';
+}
+
+async function loadSnapshotList() {
+  const listEl = document.getElementById('snapshotList');
+  if (!currentStockName) {
+    listEl.innerHTML = '<div class="empty-hint">请先选择股票</div>';
+    return;
+  }
+
+  if (!hasPat()) {
+    // Local snapshots
+    const localSnaps = JSON.parse(localStorage.getItem('ddm_local_snapshots') || '[]');
+    const prefix = currentStockName + '_';
+    const mySnaps = localSnaps.filter(s => s.name.startsWith(prefix));
+
+    if (mySnaps.length === 0) {
+      listEl.innerHTML = '<div class="empty-hint">暂无本地快照</div>';
+      return;
+    }
+
+    listEl.innerHTML = mySnaps.sort((a,b) => b.name.localeCompare(a.name)).map(s => {
+      const parts = s.name.replace(/\.json$/, '').split('_');
+      const tsStr = parts[1] || '';
+      const label = parts.slice(2).join('_') || '(未命名)';
+      let timeDisplay = tsStr;
+      if (tsStr.length === 14) {
+        timeDisplay = tsStr.substring(0,8) + ' ' + tsStr.substring(8,10) + ':' + tsStr.substring(10,12);
+      }
+      return `<div class="snapshot-item">
+        <div class="snap-info">
+          <div class="snap-label">${label}</div>
+          <div class="snap-time">${timeDisplay}</div>
+        </div>
+        <div class="snap-actions">
+          <button class="snap-btn restore" onclick="restoreSnapshotLocal('${s.name}')">恢复</button>
+          <button class="snap-btn delete" onclick="deleteSnapshotLocal('${s.name}')">删除</button>
+        </div>
+      </div>`;
+    }).join('');
+    return;
+  }
+
+  try {
+    listEl.innerHTML = '<div class="empty-hint">加载中...</div>';
+    const files = await githubList(GITHUB.snapshotsDir);
+    // Filter snapshots for current stock
+    const prefix = currentStockName + '_';
+    const mySnaps = files
+      .filter(f => f.name.startsWith(prefix) && f.name.endsWith('.json'))
+      .sort((a, b) => b.name.localeCompare(a.name)); // Newest first
+
+    if (mySnaps.length === 0) {
+      listEl.innerHTML = '<div class="empty-hint">暂无快照</div>';
+      return;
+    }
+
+    listEl.innerHTML = mySnaps.map(f => {
+      // Parse: stockName_timestamp_label.json
+      const parts = f.name.replace(/\.json$/, '').split('_');
+      // parts[0] = stockName, parts[1] = timestamp, parts[2+] = label
+      const tsStr = parts[1] || '';
+      const label = parts.slice(2).join('_') || '(未命名)';
+      // Format timestamp
+      let timeDisplay = tsStr;
+      if (tsStr.length === 14) {
+        timeDisplay = tsStr.substring(0,8) + ' ' + tsStr.substring(8,10) + ':' + tsStr.substring(10,12);
+      }
+      return `<div class="snapshot-item">
+        <div class="snap-info">
+          <div class="snap-label">${label}</div>
+          <div class="snap-time">${timeDisplay}</div>
+        </div>
+        <div class="snap-actions">
+          <button class="snap-btn restore" onclick="restoreSnapshot('${f.path}')">恢复</button>
+          <button class="snap-btn delete" onclick="deleteSnapshot('${f.path}', '${f.sha}', '${f.name}')">删除</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    listEl.innerHTML = `<div class="empty-hint">加载失败: ${e.message}</div>`;
+  }
+}
+
+async function restoreSnapshot(path) {
+  if (!confirm('恢复快照将覆盖当前数据，确定？')) return;
+
+  try {
+    setSyncStatus('loading');
+    const file = await githubGet(path);
+    if (file) {
+      const data = JSON.parse(base64ToUtf8(file.content));
+      // Don't change currentStockName, just load data
+      deserializeState(data);
+      setSyncStatus('synced');
+      showToast('快照已恢复（需手动保存才会写入主数据）', 'success');
+    }
+  } catch (e) {
+    showToast('恢复失败: ' + e.message, 'error');
+    setSyncStatus('error');
+  }
+}
+
+async function deleteSnapshot(path, sha, name) {
+  if (!confirm(`删除快照「${name}」？`)) return;
+
+  try {
+    await githubDelete(path, sha, `DDM: 删除快照 ${name}`);
+    showToast('快照已删除', 'success');
+    await loadSnapshotList();
+  } catch (e) {
+    showToast('删除失败: ' + e.message, 'error');
+  }
+}
+
+// Local snapshot restore/delete (no PAT)
+function restoreSnapshotLocal(name) {
+  if (!confirm('恢复快照将覆盖当前数据，确定？')) return;
+  const localSnaps = JSON.parse(localStorage.getItem('ddm_local_snapshots') || '[]');
+  const snap = localSnaps.find(s => s.name === name);
+  if (snap && snap.data) {
+    deserializeState(snap.data);
+    showToast('快照已恢复（需手动保存才会写入主数据）', 'success');
+  } else {
+    showToast('快照数据损坏', 'error');
+  }
+}
+
+function deleteSnapshotLocal(name) {
+  if (!confirm(`删除快照「${name}」？`)) return;
+  let localSnaps = JSON.parse(localStorage.getItem('ddm_local_snapshots') || '[]');
+  localSnaps = localSnaps.filter(s => s.name !== name);
+  localStorage.setItem('ddm_local_snapshots', JSON.stringify(localSnaps));
+  showToast('快照已删除', 'success');
+  loadSnapshotList();
+}
+
+// ============================================================
+//  AUTO-SAVE
+// ============================================================
+function scheduleAutoSave() {
+  if (cloudLoading) return;
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    await saveCurrentStock();
+  }, 3000);
+}
+
+// ============================================================
+//  TABLE BUILDING
+// ============================================================
+function buildEngineTable() {
+  const tbody = document.getElementById('engineBody');
+  tbody.innerHTML = '';
+  scenarios.forEach((s, si) => {
+    // EPS row
+    const epsRow = document.createElement('tr');
+    epsRow.className = s.cls;
+    epsRow.innerHTML = `<td class="label-col">${s.name}</td><td>EPS (元)</td>`;
+    for (let i = 0; i < 5; i++) {
+      epsRow.innerHTML += `<td><input type="number" data-si="${si}" data-field="eps" data-idx="${i}" value="${s.eps[i]}" step="0.01"></td>`;
+    }
+    epsRow.innerHTML += `<td><input type="number" data-si="${si}" data-field="g2" value="${s.g2}" step="0.001"></td>`;
+    epsRow.innerHTML += `<td><input type="number" data-si="${si}" data-field="r" value="${s.r}" step="0.001"></td>`;
+    epsRow.innerHTML += `<td colspan="3"></td>`;
+    tbody.appendChild(epsRow);
+
+    // Payout row
+    const payoutRow = document.createElement('tr');
+    payoutRow.className = s.cls;
+    payoutRow.innerHTML = `<td></td><td>派息率</td>`;
+    for (let i = 0; i < 5; i++) {
+      payoutRow.innerHTML += `<td><input type="number" data-si="${si}" data-field="payout" data-idx="${i}" value="${s.payout[i]}" step="0.01"></td>`;
+    }
+    payoutRow.innerHTML += `<td colspan="4"></td>`;
+    tbody.appendChild(payoutRow);
+
+    // Dividend row (calculated)
+    const divRow = document.createElement('tr');
+    divRow.className = s.cls;
+    divRow.innerHTML = `<td></td><td class="calc-cell">股息 D_t (元)</td>`;
+    for (let i = 0; i < 5; i++) {
+      divRow.innerHTML += `<td class="calc-cell" id="div_${si}_${i}"></td>`;
+    }
+    divRow.innerHTML += `<td></td><td></td>`;
+    divRow.innerHTML += `<td class="calc-cell" id="d6_${si}"></td>`;
+    divRow.innerHTML += `<td class="calc-cell" id="p5_${si}"></td>`;
+    divRow.innerHTML += `<td class="calc-cell" id="pv5_${si}"></td>`;
+    tbody.appendChild(divRow);
+
+    // PV sum + V0 row
+    const v0Row = document.createElement('tr');
+    v0Row.className = s.cls;
+    v0Row.innerHTML = `<td></td><td>前5年折现和</td>`;
+    v0Row.innerHTML += `<td colspan="5" class="calc-cell" id="pvSum_${si}"></td>`;
+    v0Row.innerHTML += `<td colspan="2"></td>`;
+    v0Row.innerHTML += `<td colspan="2"></td>`;
+    v0Row.innerHTML += `<td style="font-weight:700;color:#C00000;">V₀ =</td>`;
+    v0Row.innerHTML += `<td class="gold-cell" id="v0_${si}"></td>`;
+    tbody.appendChild(v0Row);
+  });
+
+  // Attach listeners
+  tbody.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', readEngineInputs);
+  });
+}
+
+function readEngineInputs() {
+  document.querySelectorAll('#engineBody input').forEach(inp => {
+    const si = parseInt(inp.dataset.si);
+    const field = inp.dataset.field;
+    const val = parseFloat(inp.value) || 0;
+    if (field === 'eps' || field === 'payout') {
+      scenarios[si][field][parseInt(inp.dataset.idx)] = val;
+    } else {
+      scenarios[si][field] = val;
+    }
+  });
+  calculateAll();
+}
+
+function buildBayesTable() {
+  const tbody = document.getElementById('bayesBody');
+  tbody.innerHTML = '';
+  scenarios.forEach((s, si) => {
+    const tr = document.createElement('tr');
+    tr.className = s.cls;
+    tr.innerHTML = `
+      <td class="label-col">${s.name}</td>
+      <td><input type="number" data-si="${si}" data-field="prior" value="${s.prior}" step="0.01"></td>
+      <td><input type="number" data-si="${si}" data-field="L" value="${s.L}" step="0.1"></td>
+      <td class="calc-cell" id="weighted_${si}"></td>
+      <td class="gold-cell" id="posterior_${si}"></td>
+      <td><input type="text" data-si="${si}" data-field="note" value="${s.note}" class="note-input" placeholder="备注..."></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Total row
+  const totalRow = document.createElement('tr');
+  totalRow.className = 'scen-none';
+  totalRow.innerHTML = `
+    <td class="label-col">合计</td>
+    <td class="calc-cell" id="priorSum"></td>
+    <td>—</td>
+    <td class="calc-cell" id="weightedSum"></td>
+    <td class="calc-cell" id="posteriorSum"></td>
+    <td style="text-align:left;font-size:12px;color:#808080;">归一化基数</td>
+  `;
+  tbody.appendChild(totalRow);
+
+  tbody.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', readBayesInputs);
+  });
+}
+
+function readBayesInputs() {
+  document.querySelectorAll('#bayesBody input').forEach(inp => {
+    const si = parseInt(inp.dataset.si);
+    const field = inp.dataset.field;
+    if (field === 'note') {
+      scenarios[si].note = inp.value;
+    } else {
+      scenarios[si][field] = parseFloat(inp.value) || 0;
+    }
+  });
+  updateJudgmentHint();
+  calculateAll();
+}
+
+function updateJudgmentHint() {
+  const eps1 = num('actualEPS1');
+  const payout1 = num('actualPayout1');
+  let hint = '';
+  if (eps1 <= 0.95 && payout1 <= 0.60) {
+    hint = `→ 判定: EPS₁=${eps1.toFixed(2)}≤0.95 且 派息率=${(payout1*100).toFixed(0)}%≤60% → 触发保守 L=3.0`;
+  } else if (eps1 > 0.95 && eps1 <= 1.00 && payout1 < 0.65) {
+    hint = `→ 判定: EPS₁=${eps1.toFixed(2)}∈(0.95,1.00] 且 派息率<65% → 触发保守 L=2.0`;
+  } else if (eps1 > 0.95 && eps1 <= 1.05 && Math.abs(payout1 - 0.70) < 0.05) {
+    hint = `→ 判定: EPS₁=${eps1.toFixed(2)}∈(0.95,1.05] 且 派息率≈70% → 触发中性 L=1.5`;
+  } else if (eps1 > 1.00 && eps1 <= 1.08 && payout1 >= 0.65 && payout1 <= 0.75) {
+    hint = `→ 判定: EPS₁=${eps1.toFixed(2)}∈(1.00,1.08] 且 派息率∈[65%,75%] → 触发中性 L=1.2`;
+  } else if (eps1 > 1.05 && payout1 >= 0.75) {
+    hint = `→ 判定: EPS₁=${eps1.toFixed(2)}>1.05 且 派息率≥75% → 触发乐观 L=4.0`;
+  } else if (eps1 > 1.05 && payout1 >= 0.70 && payout1 < 0.75) {
+    hint = `→ 判定: EPS₁=${eps1.toFixed(2)}>1.05 且 派息率∈[70%,75%) → 触发乐观 L=2.5`;
+  } else {
+    hint = `→ 判定: 数据模糊或介于情景之间 → 无信息增量 L=1.0`;
+  }
+  document.getElementById('judgmentHint').textContent = hint;
+}
+
+function buildReturnTable() {
+  const tbody = document.getElementById('returnBody');
+  tbody.innerHTML = '';
+  scenarios.forEach((s, si) => {
+    const tr = document.createElement('tr');
+    tr.className = s.cls;
+    tr.innerHTML = `
+      <td class="label-col">${s.name}</td>
+      <td id="ret_post_${si}"></td>
+      <td id="ret_d1_${si}"></td>
+      <td id="ret_yield_${si}"></td>
+      <td id="ret_g2_${si}"></td>
+      <td class="gold-cell" id="ret_total_${si}"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function buildDdmTable() {
+  const tbody = document.getElementById('ddmBody');
+  tbody.innerHTML = '';
+  scenarios.forEach((s, si) => {
+    const tr = document.createElement('tr');
+    tr.className = s.cls;
+    tr.innerHTML = `
+      <td class="label-col">${s.name}</td>
+      <td id="ddm_v0_${si}"></td>
+      <td id="ddm_p0_${si}"></td>
+      <td id="ddm_margin_${si}"></td>
+      <td id="ddm_post_${si}"></td>
+      <td class="calc-cell" id="ddm_weighted_${si}"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+//  MAIN CALCULATION
+// ============================================================
+function calculateAll() {
+  const P0 = num('P0');
+  const costRate = num('costRate');
+  const riskPremium = num('riskPremium');
+  const hurdle = costRate + riskPremium;
+
+  document.getElementById('hurdleRate').textContent = fmtPct(hurdle);
+
+  // === Engine calculations ===
+  const v0s = [];
+  const d1s = [];
+
+  scenarios.forEach((s, si) => {
+    const divs = [];
+    for (let i = 0; i < 5; i++) {
+      const d = s.eps[i] * s.payout[i];
+      divs.push(d);
+      document.getElementById(`div_${si}_${i}`).textContent = fmt(d, 3);
+    }
+    const d6 = divs[4] * (1 + s.g2);
+    document.getElementById(`d6_${si}`).textContent = fmt(d6, 4);
+    const p5 = (s.r - s.g2) !== 0 ? d6 / (s.r - s.g2) : 0;
+    document.getElementById(`p5_${si}`).textContent = fmt(p5, 4);
+    const pv5 = p5 / Math.pow(1 + s.r, 5);
+    document.getElementById(`pv5_${si}`).textContent = fmt(pv5, 4);
+    let pvSum = 0;
+    for (let i = 0; i < 5; i++) {
+      pvSum += divs[i] / Math.pow(1 + s.r, i + 1);
+    }
+    document.getElementById(`pvSum_${si}`).textContent = fmt(pvSum, 4);
+    const v0 = pvSum + pv5;
+    v0s.push(v0);
+    document.getElementById(`v0_${si}`).textContent = fmt(v0, 2);
+    d1s.push(divs[0]);
+  });
+
+  // === Bayes calculations ===
+  let weightedSum = 0;
+  let priorSum = 0;
+  const weighteds = [];
+  scenarios.forEach((s, si) => {
+    priorSum += s.prior;
+    const w = s.L * s.prior;
+    weighteds.push(w);
+    weightedSum += w;
+    document.getElementById(`weighted_${si}`).textContent = fmt(w, 4);
+  });
+
+  const posteriors = [];
+  scenarios.forEach((s, si) => {
+    const post = weightedSum !== 0 ? weighteds[si] / weightedSum : 0;
+    posteriors.push(post);
+    document.getElementById(`posterior_${si}`).textContent = fmtPct(post, 2);
+  });
+
+  document.getElementById('priorSum').textContent = fmtPct(priorSum, 0);
+  document.getElementById('weightedSum').textContent = fmt(weightedSum, 4);
+  document.getElementById('posteriorSum').textContent = fmtPct(posteriors.reduce((a,b)=>a+b, 0), 2);
+
+  // === Return calculations ===
+  let weightedReturn = 0;
+  scenarios.forEach((s, si) => {
+    const d1 = d1s[si];
+    const yield_ = P0 !== 0 ? d1 / P0 : 0;
+    const totalReturn = yield_ + s.g2;
+    weightedReturn += posteriors[si] * totalReturn;
+    document.getElementById(`ret_post_${si}`).textContent = fmtPct(posteriors[si], 2);
+    document.getElementById(`ret_d1_${si}`).textContent = fmt(d1, 3);
+    document.getElementById(`ret_yield_${si}`).textContent = fmtPct(yield_, 3);
+    document.getElementById(`ret_g2_${si}`).textContent = fmtPct(s.g2, 1);
+    document.getElementById(`ret_total_${si}`).textContent = fmtPct(totalReturn, 3);
+  });
+
+  // === Decision summary ===
+  document.getElementById('weightedReturn').textContent = fmtPct(weightedReturn, 3);
+  document.getElementById('hurdleDisplay').textContent = fmtPct(hurdle, 2);
+  const excess = weightedReturn - hurdle;
+  document.getElementById('excessReturn').textContent = fmtPct(excess, 3);
+
+  const finalDec = document.getElementById('finalDecision');
+  if (weightedReturn > hurdle) {
+    finalDec.className = 'decision-box decision-buy';
+    finalDec.textContent = '✅ 坚定买入 (隐含回报率 > 门槛)';
+  } else {
+    finalDec.className = 'decision-box decision-wait';
+    finalDec.textContent = '⚠️ 观望或减仓 (隐含回报率 ≤ 门槛)';
+  }
+
+  // === DDM valuation table ===
+  let weightedV0 = 0;
+  scenarios.forEach((s, si) => {
+    const v0 = v0s[si];
+    const margin = P0 !== 0 ? (v0 - P0) / P0 : 0;
+    const wv0 = v0 * posteriors[si];
+    weightedV0 += wv0;
+    document.getElementById(`ddm_v0_${si}`).textContent = fmt(v0, 2);
+    document.getElementById(`ddm_p0_${si}`).textContent = fmt(P0, 2);
+    const marginCell = document.getElementById(`ddm_margin_${si}`);
+    marginCell.textContent = fmtPct(margin, 2);
+    marginCell.style.color = margin >= 0 ? '#006100' : '#9C0006';
+    document.getElementById(`ddm_post_${si}`).textContent = fmtPct(posteriors[si], 2);
+    document.getElementById(`ddm_weighted_${si}`).textContent = fmt(wv0, 2);
+  });
+
+  document.getElementById('weightedV0').textContent = fmt(weightedV0, 2);
+  document.getElementById('currentPriceDisplay').textContent = fmt(P0, 2);
+
+  const valDec = document.getElementById('valuationDecision');
+  if (weightedV0 > P0) {
+    valDec.className = 'decision-box decision-buy';
+    valDec.textContent = '✅ 股价低于加权内在价值, 具备安全边际';
+  } else {
+    valDec.className = 'decision-box decision-wait';
+    valDec.textContent = '⚠️ 股价高于加权内在价值, 估值偏高';
+  }
+
+  // Schedule auto-save after calculation
+  if (!cloudLoading) {
+    scheduleAutoSave();
+  }
+}
+
+// ============================================================
+//  INITIALIZATION
+// ============================================================
+function buildAllTables() {
+  buildEngineTable();
+  buildBayesTable();
+  buildReturnTable();
+  buildDdmTable();
+}
+
+async function initCloudSync() {
+  await loadStockList();
+}
+
+// Build tables on load
+buildAllTables();
+updateJudgmentHint();
+calculateAll();
+
+// Listen to global param changes
+['P0','costRate','riskPremium','actualEPS1','actualPayout1'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calculateAll);
+});
+
+// Initialize cloud sync
+initCloudSync();
+
+// Save on page unload
+window.addEventListener('beforeunload', () => {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveToLocal(); // Synchronous backup
+  }
+});
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('show');
+  });
+});
+</script>
+
+</body>
+</html>
