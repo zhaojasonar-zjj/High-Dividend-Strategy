@@ -994,7 +994,7 @@ async function githubGet(path) {
   return resp.json();
 }
 
-async function githubPut(path, content, sha, message) {
+async function githubPut(path, content, sha, message, isRetry) {
   const url = `${GITHUB.apiBase}/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${path}`;
   const body = {
     message: message,
@@ -1015,6 +1015,15 @@ async function githubPut(path, content, sha, message) {
 
   if (resp.status === 409) throw new Error('CONFLICT');
   if (resp.status === 401) throw new Error('PAT 无效或已过期');
+
+  // 422: file exists but SHA wasn't supplied → auto-fetch SHA and retry once
+  if (resp.status === 422 && !isRetry) {
+    const existing = await githubGet(path);
+    if (existing && existing.sha) {
+      return githubPut(path, content, existing.sha, message, true);
+    }
+  }
+
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
     throw new Error(`GitHub API ${resp.status}: ${err.message || resp.statusText}`);
