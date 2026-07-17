@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-17T13:51:48.998Z",
+  "savedAt": "2026-07-17T13:52:07.162Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -275,7 +275,7 @@
         "date": "2026-7-17",
         "stock": "泸州老窖/五粮液",
         "action": "",
-        "basis": "",
+        "basis": "i茅台飞天茅台涨价100元到1639元",
         "emotion": "",
         "expected": "",
         "actual": "",
