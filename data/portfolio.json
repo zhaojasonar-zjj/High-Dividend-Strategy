@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-17T13:26:04.139Z",
+  "savedAt": "2026-07-17T13:26:49.985Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -249,6 +249,16 @@
         "basis": "六福集团公布2026年Q2经营数据，内地黄金零售数据超预期好",
         "emotion": "1",
         "expected": "持币防守，助力主力军阵地战",
+        "actual": "",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
+        "expected": "",
         "actual": "",
         "review": ""
       }
