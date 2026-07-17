@@ -198,33 +198,47 @@
   .cell-signal  { background: var(--c-signal-yellow); }
   .cell-op      { background: var(--c-op-blue); }
 
-  /* === Summary Section === */
-  .summary-title td {
+  /* === Summary Section (separate from main table) === */
+  .summary-section {
+    max-width: 1400px;
+    margin: 12px auto 0;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  .summary-title-bar {
     background: var(--c-summary-header-bg);
     color: #fff;
     font-size: 16px;
     font-weight: bold;
     text-align: center;
     padding: 10px;
-    border-color: var(--c-summary-header-bg);
   }
-  .summary-header td {
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    border-top: 1px solid var(--c-border);
+  }
+  .summary-grid .sg-cell {
+    border-right: 1px solid var(--c-border);
+  }
+  .summary-grid .sg-cell:last-child { border-right: none; }
+  .summary-grid .sg-label {
     background: var(--c-summary-label-bg);
     color: var(--c-text-dark);
     font-size: 14px;
     font-weight: bold;
     text-align: center;
     padding: 8px;
+    border-bottom: 1px solid var(--c-border);
   }
-  .summary-value td {
+  .summary-grid .sg-value {
     background: var(--c-summary-value-bg);
-    color: var(--c-summary-value-text);
-    font-size: 14px;
-    text-align: center;
     padding: 10px 8px;
   }
-  .summary-value td input,
-  .summary-value td textarea {
+  .summary-grid .sg-value input,
+  .summary-grid .sg-value textarea {
     width: 100%;
     border: none;
     background: transparent;
@@ -235,9 +249,10 @@
     padding: 4px;
     outline: none;
     border-radius: 3px;
+    resize: none;
   }
-  .summary-value td input:focus,
-  .summary-value td textarea:focus {
+  .summary-grid .sg-value input:focus,
+  .summary-grid .sg-value textarea:focus {
     background: #fff;
     box-shadow: 0 0 0 2px #085041 inset;
   }
@@ -838,33 +853,49 @@
     <td class="editable cell-op"><textarea data-key="l4_7_op" rows="1">中小酒企持续亏损</textarea></td>
   </tr>
 
-  <!-- ===== Summary ===== -->
-  <tr class="summary-title">
-    <td colspan="7">白酒周期四层传导综合进度摘要</td>
-  </tr>
-  <tr class="summary-header">
-    <td>第一层：消费需求</td>
-    <td>第二层：销售终端</td>
-    <td>第三层：经销商渠道</td>
-    <td colspan="4">第四层：酒厂报表</td>
-  </tr>
-  <tr class="summary-value">
-    <td><input type="text" data-key="sum_l1" value="复苏已启动·哑铃型分化"></td>
-    <td><input type="text" data-key="sum_l2" value="批价企稳·距确认仍有一步"></td>
-    <td><input type="text" data-key="sum_l3" value="分化剧烈·老窖渠道压力最大"></td>
-    <td colspan="4"><input type="text" data-key="sum_l4" value="龙头复苏·中小持续出清"></td>
-  </tr>
+  <!-- ===== Summary (separate section below table) ===== -->
 
+</table>
+</div><!-- /.table-container -->
+
+<div class="summary-section">
+  <div class="summary-title-bar">白酒周期四层传导综合进度摘要</div>
+  <div class="summary-grid">
+    <div class="sg-cell">
+      <div class="sg-label">第一层：消费需求</div>
+      <div class="sg-value"><input type="text" data-key="sum_l1" value="复苏已启动·哑铃型分化"></div>
+    </div>
+    <div class="sg-cell">
+      <div class="sg-label">第二层：销售终端</div>
+      <div class="sg-value"><input type="text" data-key="sum_l2" value="批价企稳·距确认仍有一步"></div>
+    </div>
+    <div class="sg-cell">
+      <div class="sg-label">第三层：经销商渠道</div>
+      <div class="sg-value"><input type="text" data-key="sum_l3" value="分化剧烈·老窖渠道压力最大"></div>
+    </div>
+    <div class="sg-cell">
+      <div class="sg-label">第四层：酒厂报表</div>
+      <div class="sg-value"><input type="text" data-key="sum_l4" value="龙头复苏·中小持续出清"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer table -->
+<div class="table-container" style="margin-top:12px;">
+<table>
+  <colgroup>
+    <col style="width:28%">
+    <col style="width:72%">
+  </colgroup>
   <!-- ===== Footer ===== -->
   <tr class="footer-header">
-    <td colspan="2">更新频率</td>
-    <td colspan="5">更新日期</td>
+    <td>更新频率</td>
+    <td>更新日期</td>
   </tr>
   <tr class="footer-value">
-    <td colspan="2"><input type="text" data-key="freq" value="周/月/季"></td>
-    <td colspan="5"><input type="text" data-key="date" value="2026-07-15"></td>
+    <td><input type="text" data-key="freq" value="周/月/季"></td>
+    <td><input type="text" data-key="date" value="2026-07-15"></td>
   </tr>
-
 </table>
 </div>
 
