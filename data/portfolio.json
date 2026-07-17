@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-17T13:27:29.743Z",
+  "savedAt": "2026-07-17T13:27:54.427Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -258,7 +258,7 @@
         "action": "",
         "basis": "六福集团公布2026年Q2经营数据，内地黄金零售数据超预期好，与六福集团基本吻合",
         "emotion": "1",
-        "expected": "",
+        "expected": "优先考虑周大生",
         "actual": "",
         "review": ""
       }
