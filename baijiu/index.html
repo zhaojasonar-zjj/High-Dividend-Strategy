@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>白酒周期四层传导模型 · 周期进程量化评估</title>
+<style>
+  /* === Reset & Base === */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Noto Sans CJK SC", "Microsoft YaHei", "SimSun", sans-serif;
+    background: #f0ede8;
+    color: #2d2d2a;
+    padding: 20px;
+    min-height: 100vh;
+  }
+
+  /* === Color Tokens (from Excel) === */
+  :root {
+    --c-title-bg: #BA7517;
+    --c-subtitle-bg: #F8F7F4;
+    --c-subtitle-text: #888780;
+    --c-header-bg: #3D3D3A;
+    --c-header-text: #FFFFFF;
+    --c-section-yellow: #FEF3CD;
+    --c-section-green: #E1F5EE;
+    --c-data-blue: #E6F1FB;
+    --c-threshold-yellow: #FEF3CD;
+    --c-assess-green: #E1F5EE;
+    --c-signal-yellow: #FEF3CD;
+    --c-op-blue: #E6F1FB;
+    --c-summary-header-bg: #085041;
+    --c-summary-label-bg: #F1EFE8;
+    --c-summary-value-bg: #F8F7F4;
+    --c-summary-value-text: #0070C0;
+    --c-footer-header-bg: #3D3D3A;
+    --c-footer-value-bg: #F0FCF7;
+    --c-border: #C8C5BE;
+    --c-text-dark: #3D3D3A;
+    --c-text-blue: #0070C0;
+  }
+
+  /* === Toolbar === */
+  .toolbar {
+    max-width: 1400px;
+    margin: 0 auto 16px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .toolbar .info {
+    margin-left: auto;
+    font-size: 12px;
+    color: #888780;
+  }
+  .btn {
+    padding: 8px 18px;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--c-text-dark);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .btn:hover { background: var(--c-section-yellow); border-color: #BA7517; }
+  .btn.primary { background: #BA7517; color: #fff; border-color: #BA7517; }
+  .btn.primary:hover { background: #a06312; }
+  .btn.danger { color: #c0392b; }
+  .btn.danger:hover { background: #fef2f2; border-color: #c0392b; }
+
+  /* === Table Container === */
+  .table-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    table-layout: fixed;
+  }
+
+  th, td {
+    border: 1px solid var(--c-border);
+    padding: 6px 8px;
+    vertical-align: middle;
+    position: relative;
+  }
+
+  /* Column widths */
+  col.col-level   { width: 9%; }
+  col.col-indicator { width: 22%; }
+  col.col-data    { width: 12%; }
+  col.col-threshold { width: 10%; }
+  col.col-assess  { width: 17%; }
+  col.col-signal  { width: 10%; }
+  col.col-op      { width: 20%; }
+
+  /* === Title Row === */
+  .title-row td {
+    background: var(--c-title-bg);
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    padding: 14px;
+    border-color: var(--c-title-bg);
+  }
+
+  /* === Subtitle Row === */
+  .subtitle-row td {
+    background: var(--c-subtitle-bg);
+    color: var(--c-subtitle-text);
+    font-size: 11px;
+    text-align: center;
+    padding: 6px;
+    border-color: var(--c-border);
+  }
+
+  /* === Header Row === */
+  .header-row th {
+    background: var(--c-header-bg);
+    color: var(--c-header-text);
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px 6px;
+    border-color: #5a5a56;
+    line-height: 1.4;
+  }
+
+  /* === Section Labels (B column) === */
+  .section-label {
+    font-weight: bold;
+    font-size: 12px;
+    text-align: center;
+    color: var(--c-text-dark);
+    vertical-align: middle !important;
+    line-height: 1.5;
+    white-space: pre-line;
+    writing-mode: horizontal-tb;
+  }
+  .section-label.yellow { background: var(--c-section-yellow); }
+  .section-label.green  { background: var(--c-section-green); }
+
+  /* === Indicator Cells (C column) === */
+  .indicator-cell {
+    background: #fff;
+    font-size: 12px;
+    color: #000;
+    text-align: left;
+    padding: 5px 10px;
+  }
+
+  /* === Editable Cells === */
+  .editable {
+    font-size: 12px;
+    text-align: center;
+    padding: 2px;
+    transition: background 0.15s;
+  }
+  .editable input,
+  .editable textarea {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 12px;
+    text-align: center;
+    padding: 4px 6px;
+    outline: none;
+    border-radius: 3px;
+    color: #000;
+  }
+  .editable input:focus,
+  .editable textarea:focus {
+    background: #fff;
+    box-shadow: 0 0 0 2px #BA7517 inset;
+  }
+  .editable textarea {
+    resize: none;
+    overflow: hidden;
+    min-height: 24px;
+    line-height: 1.4;
+  }
+
+  .cell-data    { background: var(--c-data-blue); }
+  .cell-threshold { background: var(--c-threshold-yellow); }
+  .cell-assess  { background: var(--c-assess-green); }
+  .cell-signal  { background: var(--c-signal-yellow); }
+  .cell-op      { background: var(--c-op-blue); }
+
+  /* === Summary Section === */
+  .summary-title td {
+    background: var(--c-summary-header-bg);
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px;
+    border-color: var(--c-summary-header-bg);
+  }
+  .summary-header td {
+    background: var(--c-summary-label-bg);
+    color: var(--c-text-dark);
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    padding: 8px;
+  }
+  .summary-value td {
+    background: var(--c-summary-value-bg);
+    color: var(--c-summary-value-text);
+    font-size: 14px;
+    text-align: center;
+    padding: 10px 8px;
+  }
+  .summary-value td input,
+  .summary-value td textarea {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 14px;
+    text-align: center;
+    color: var(--c-text-blue);
+    padding: 4px;
+    outline: none;
+    border-radius: 3px;
+  }
+  .summary-value td input:focus,
+  .summary-value td textarea:focus {
+    background: #fff;
+    box-shadow: 0 0 0 2px #085041 inset;
+  }
+
+  /* === Footer === */
+  .footer-header td {
+    background: var(--c-footer-header-bg);
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    padding: 6px;
+  }
+  .footer-value td {
+    background: var(--c-footer-value-bg);
+    font-size: 12px;
+    text-align: left;
+    padding: 6px 10px;
+    color: var(--c-text-dark);
+  }
+  .footer-value td input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 12px;
+    text-align: left;
+    padding: 3px 4px;
+    outline: none;
+    color: var(--c-text-dark);
+    border-radius: 3px;
+  }
+  .footer-value td input:focus {
+    background: #fff;
+    box-shadow: 0 0 0 2px #3D3D3A inset;
+  }
+
+  /* === Signal Status Badges === */
+  .signal-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .signal-green  { background: #d4f0dd; color: #1a7a3a; }
+  .signal-yellow { background: #fff3cd; color: #856404; }
+  .signal-red    { background: #f8d7da; color: #721c24; }
+  .signal-gray   { background: #e9ecef; color: #6c757d; }
+
+  .signal-cell {
+    text-align: center;
+    padding: 4px;
+    cursor: pointer;
+  }
+
+  /* === Responsive === */
+  @media (max-width: 900px) {
+    body { padding: 8px; }
+    .table-container { overflow-x: auto; border-radius: 4px; }
+    table { min-width: 800px; }
+  }
+
+  /* Save indicator */
+  #saveStatus {
+    font-size: 12px;
+    color: #888780;
+    transition: color 0.3s;
+  }
+  #saveStatus.saving { color: #BA7517; }
+  #saveStatus.saved  { color: #1a7a3a; }
+
+  /* === Cloud Sync Bar === */
+  .cloud-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+  .cloud-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #aaa;
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .cloud-dot.synced  { background: #1a7a3a; }
+  .cloud-dot.saving  { background: #BA7517; animation: pulse 1s infinite; }
+  .cloud-dot.loading { background: #3b82f6; animation: pulse 1s infinite; }
+  .cloud-dot.error   { background: #c0392b; }
+  .cloud-dot.offline { background: #aaa; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  #cloudStatusText {
+    white-space: nowrap;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cloud-btn {
+    padding: 4px 10px;
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    background: #f8f7f4;
+    color: var(--c-text-dark);
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .cloud-btn:hover { background: var(--c-section-yellow); border-color: #BA7517; }
+  .cloud-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* === Modal === */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: #fff;
+    border-radius: 10px;
+    padding: 28px 32px;
+    max-width: 580px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .modal-box h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: var(--c-text-dark);
+  }
+  .modal-box p {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+  .modal-box p a { color: #0070C0; text-decoration: none; }
+  .modal-box p a:hover { text-decoration: underline; }
+  .modal-box input[type="password"],
+  .modal-box input[type="text"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: monospace;
+    margin-bottom: 14px;
+    background: #f8f9fa;
+  }
+  .modal-box input:focus {
+    outline: 2px solid #BA7517;
+    background: #fff;
+  }
+  .modal-detail {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    font-size: 12px;
+    line-height: 1.8;
+    color: #666;
+  }
+  .modal-detail ol { padding-left: 18px; }
+  .modal-detail code {
+    background: #FEF3CD;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11px;
+    color: #856404;
+  }
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+  .modal-actions .btn.danger { margin-right: auto; }
+
+  /* === Snapshot List === */
+  .snapshot-list {
+    max-height: 360px;
+    overflow-y: auto;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    margin: 12px 0;
+  }
+  .snapshot-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+    transition: background 0.15s;
+  }
+  .snapshot-item:last-child { border-bottom: none; }
+  .snapshot-item:hover { background: #f8f9fa; }
+  .snapshot-item .snap-msg {
+    flex: 1;
+    font-weight: 500;
+    color: var(--c-text-dark);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .snapshot-item .snap-date {
+    font-size: 11px;
+    color: #888;
+    white-space: nowrap;
+  }
+  .snapshot-item .snap-restore {
+    padding: 3px 10px;
+    font-size: 11px;
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    color: #0070C0;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .snapshot-item .snap-restore:hover {
+    background: #E6F1FB;
+    border-color: #0070C0;
+  }
+  .snapshot-empty {
+    text-align: center;
+    padding: 30px;
+    color: #888;
+    font-size: 13px;
+  }
+  .snap-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .snap-input-row input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .snap-input-row input:focus {
+    outline: 2px solid #BA7517;
+    background: #fff;
+  }
+
+  /* === Toolbar separator === */
+  .toolbar-sep {
+    width: 1px;
+    height: 24px;
+    background: var(--c-border);
+    margin: 0 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <button class="btn primary" onclick="exportJSON()">导出 JSON</button>
+  <button class="btn" onclick="exportCSV()">导出 CSV</button>
+  <button class="btn" onclick="importJSON()">导入数据</button>
+  <button class="btn" onclick="resetData()">重置数据</button>
+  <input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleFileImport(event)">
+  <div class="toolbar-sep"></div>
+  <!-- Cloud Sync Bar -->
+  <div class="cloud-bar">
+    <span class="cloud-dot offline" id="cloudDot"></span>
+    <span id="cloudStatusText">未连接云端</span>
+    <button class="cloud-btn" onclick="manualCloudSave()" title="手动保存到云端">⬆ 保存</button>
+    <button class="cloud-btn" onclick="cloudLoadAndRender()" title="从云端拉取最新数据">⬇ 加载</button>
+    <button class="cloud-btn" onclick="showSnapshotModal()" title="查看/恢复命名快照">📸 快照</button>
+    <button class="cloud-btn" onclick="showTokenModal()" title="云端同步设置">⚙ 设置</button>
+  </div>
+  <span class="info">
+    <span id="saveStatus">已加载</span> · 本地自动保存
+  </span>
+</div>
+
+<!-- Table -->
+<div class="table-container">
+<table id="mainTable">
+  <colgroup>
+    <col class="col-level">
+    <col class="col-indicator">
+    <col class="col-data">
+    <col class="col-threshold">
+    <col class="col-assess">
+    <col class="col-signal">
+    <col class="col-op">
+  </colgroup>
+
+  <!-- Title -->
+  <tr class="title-row">
+    <td colspan="7">白酒周期四层传导模型 · 周期进程量化评估</td>
+  </tr>
+
+  <!-- Subtitle -->
+  <tr class="subtitle-row">
+    <td colspan="7">模型：消费需求 → 销售终端 → 经销商渠道 → 酒厂报表</td>
+  </tr>
+
+  <!-- Header -->
+  <tr class="header-row">
+    <th>层级</th>
+    <th>核心指标</th>
+    <th>当前数据/状态</th>
+    <th>周期拐点阈值</th>
+    <th>周期定位和进程评估</th>
+    <th>信号状态</th>
+    <th>操作含义</th>
+  </tr>
+
+  <!-- ===== 宏观层 (rows 6-10) ===== -->
+  <tr>
+    <td rowspan="5" class="section-label yellow" contenteditable="true">宏观层</td>
+    <td class="indicator-cell" contenteditable="true">楼市房价（财富效应）</td>
+    <td class="editable cell-data"><input type="text" data-key="macro_1_data" placeholder="—"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="macro_1_thresh" placeholder="—"></td>
+    <td class="editable cell-assess"><textarea data-key="macro_1_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="macro_1_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="editable cell-op"><textarea data-key="macro_1_op" rows="1" placeholder="—"></textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">白酒监管政策（政策红线）</td>
+    <td class="editable cell-data"><input type="text" data-key="macro_2_data" placeholder="—"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="macro_2_thresh" placeholder="—"></td>
+    <td class="editable cell-assess"><textarea data-key="macro_2_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="macro_2_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="editable cell-op"><textarea data-key="macro_2_op" rows="1" placeholder="—"></textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">人口数据（需求基石）</td>
+    <td class="editable cell-data"><input type="text" data-key="macro_3_data" placeholder="—"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="macro_3_thresh" placeholder="—"></td>
+    <td class="editable cell-assess"><textarea data-key="macro_3_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="macro_3_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="editable cell-op"><textarea data-key="macro_3_op" rows="1" placeholder="—"></textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">社会融资/货币增速</td>
+    <td class="editable cell-data"><input type="text" data-key="macro_4_data" placeholder="—"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="macro_4_thresh" placeholder="—"></td>
+    <td class="editable cell-assess"><textarea data-key="macro_4_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="macro_4_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="editable cell-op"><textarea data-key="macro_4_op" rows="1" placeholder="—"></textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">全国居民人均可支配收入</td>
+    <td class="editable cell-data"><input type="text" data-key="macro_5_data" placeholder="—"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="macro_5_thresh" placeholder="—"></td>
+    <td class="editable cell-assess"><textarea data-key="macro_5_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="macro_5_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="editable cell-op"><textarea data-key="macro_5_op" rows="1" placeholder="—"></textarea></td>
+  </tr>
+
+  <!-- ===== 第一层 消费需求 (rows 11-19) ===== -->
+  <tr>
+    <td rowspan="9" class="section-label green" contenteditable="true">第一层
+消费需求</td>
+    <td class="indicator-cell" contenteditable="true">高端酒动销同比</td>
+    <td class="editable cell-data"><input type="text" data-key="l1_1_data" value="7%"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l1_1_thresh" value="0"></td>
+    <td class="editable cell-assess"><textarea data-key="l1_1_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l1_1_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-green">利好</span></td>
+    <td class="editable cell-op"><textarea data-key="l1_1_op" rows="1">右侧布局信号</textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">次高端动销同比</td>
+    <td class="editable cell-data"><input type="text" data-key="l1_2_data" value="-18%"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l1_2_thresh" value="-5%"></td>
+    <td class="editable cell-assess"><textarea data-key="l1_2_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l1_2_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-red">利空</span></td>
+    <td class="editable cell-op"><textarea data-key="l1_2_op" rows="1">次高端回避</textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">大众酒动销同比</td>
+    <td class="editable cell-data"><input type="text" data-key="l1_3_data" placeholder="—"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l1_3_thresh" placeholder="—"></td>
+    <td class="editable cell-assess"><textarea data-key="l1_3_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l1_3_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="editable cell-op"><textarea data-key="l1_3_op" rows="1" placeholder="—"></textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">家庭自饮同比</td>
+    <td class="editable cell-data"><input type="text" data-key="l1_4_data" placeholder="—"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l1_4_thresh" placeholder="—"></td>
+    <td class="editable cell-assess"><textarea data-key="l1_4_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l1_4_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="editable cell-op"><textarea data-key="l1_4_op" rows="1" placeholder="—"></textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">宴席场次同比</td>
+    <td class="editable cell-data"><input type="text" data-key="l1_5_data" value="5%"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l1_5_thresh" value="0"></td>
+    <td class="editable cell-assess"><textarea data-key="l1_5_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l1_5_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-green">利好</span></td>
+    <td class="editable cell-op"><textarea data-key="l1_5_op" rows="1">礼品/宴席场景回暖</textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">商务宴请同比</td>
+    <td class="editable cell-data"><input type="text" data-key="l1_6_data" placeholder="—"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l1_6_thresh" placeholder="—"></td>
+    <td class="editable cell-assess"><textarea data-key="l1_6_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l1_6_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="editable cell-op"><textarea data-key="l1_6_op" rows="1" placeholder="—"></textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">政务宴请同比</td>
+    <td class="editable cell-data"><input type="text" data-key="l1_7_data" placeholder="—"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l1_7_thresh" placeholder="—"></td>
+    <td class="editable cell-assess"><textarea data-key="l1_7_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l1_7_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="editable cell-op"><textarea data-key="l1_7_op" rows="1" placeholder="—"></textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">全国餐饮收入同比</td>
+    <td class="editable cell-data"><input type="text" data-key="l1_8_data" placeholder="—"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l1_8_thresh" placeholder="—"></td>
+    <td class="editable cell-assess"><textarea data-key="l1_8_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l1_8_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="editable cell-op"><textarea data-key="l1_8_op" rows="1" placeholder="—"></textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">社会消费品零售总额-烟酒类同比</td>
+    <td class="editable cell-data"><input type="text" data-key="l1_9_data" placeholder="—"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l1_9_thresh" placeholder="—"></td>
+    <td class="editable cell-assess"><textarea data-key="l1_9_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l1_9_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="editable cell-op"><textarea data-key="l1_9_op" rows="1" placeholder="—"></textarea></td>
+  </tr>
+
+  <!-- ===== 第二层 销售终端 (rows 20-23) ===== -->
+  <tr>
+    <td rowspan="4" class="section-label yellow" contenteditable="true">第二层
+销售终端</td>
+    <td class="indicator-cell" contenteditable="true">飞天茅台批价(元)</td>
+    <td class="editable cell-data"><input type="text" data-key="l2_1_data" value="1645"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l2_1_thresh" value="1700"></td>
+    <td class="editable cell-assess"><textarea data-key="l2_1_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l2_1_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-yellow">观察</span></td>
+    <td class="editable cell-op"><textarea data-key="l2_1_op" rows="1">批价站稳1700即确认</textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">普五批价(元)</td>
+    <td class="editable cell-data"><input type="text" data-key="l2_2_data" value="765"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l2_2_thresh" value="800"></td>
+    <td class="editable cell-assess"><textarea data-key="l2_2_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l2_2_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-yellow">观察</span></td>
+    <td class="editable cell-op"><textarea data-key="l2_2_op" rows="1">800元是关键阈值</textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">国窖1573高度批价(元)</td>
+    <td class="editable cell-data"><input type="text" data-key="l2_3_data" value="885"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l2_3_thresh" value="900"></td>
+    <td class="editable cell-assess"><textarea data-key="l2_3_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l2_3_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-yellow">观察</span></td>
+    <td class="editable cell-op"><textarea data-key="l2_3_op" rows="1">最接近阈值</textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">国窖1573低度批价(元)</td>
+    <td class="editable cell-data"><input type="text" data-key="l2_4_data" placeholder="—"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l2_4_thresh" placeholder="—"></td>
+    <td class="editable cell-assess"><textarea data-key="l2_4_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l2_4_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="editable cell-op"><textarea data-key="l2_4_op" rows="1" placeholder="—"></textarea></td>
+  </tr>
+
+  <!-- ===== 第三层 经销商渠道 (rows 24-29) ===== -->
+  <tr>
+    <td rowspan="6" class="section-label green" contenteditable="true">第三层
+经销商渠道</td>
+    <td class="indicator-cell" contenteditable="true">贵州茅台渠道库存(月)</td>
+    <td class="editable cell-data"><input type="text" data-key="l3_1_data" value="1"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l3_1_thresh" value="1.5"></td>
+    <td class="editable cell-assess"><textarea data-key="l3_1_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l3_1_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-green">利好</span></td>
+    <td class="editable cell-op"><textarea data-key="l3_1_op" rows="1">健康</textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">五粮液渠道库存(月)</td>
+    <td class="editable cell-data"><input type="text" data-key="l3_2_data" value="3.5"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l3_2_thresh" value="3"></td>
+    <td class="editable cell-assess"><textarea data-key="l3_2_assess" rows="1">3</textarea></td>
+    <td class="signal-cell" data-key="l3_2_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-yellow">观察</span></td>
+    <td class="editable cell-op"><textarea data-key="l3_2_op" rows="1">接近健康水平</textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">泸州老窖渠道库存(月)</td>
+    <td class="editable cell-data"><input type="text" data-key="l3_3_data" value="7"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l3_3_thresh" value="3"></td>
+    <td class="editable cell-assess"><textarea data-key="l3_3_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l3_3_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-red">利空</span></td>
+    <td class="editable cell-op"><textarea data-key="l3_3_op" rows="1">最大持仓风险点</textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">其他白酒渠道库存(月)</td>
+    <td class="editable cell-data"><input type="text" data-key="l3_4_data" placeholder="—"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l3_4_thresh" placeholder="—"></td>
+    <td class="editable cell-assess"><textarea data-key="l3_4_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l3_4_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="editable cell-op"><textarea data-key="l3_4_op" rows="1" placeholder="—"></textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">行业平均存货周转(天)</td>
+    <td class="editable cell-data"><input type="text" data-key="l3_5_data" value="900"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l3_5_thresh" value="360"></td>
+    <td class="editable cell-assess"><textarea data-key="l3_5_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l3_5_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-red">利空</span></td>
+    <td class="editable cell-op"><textarea data-key="l3_5_op" rows="1">历史峰值</textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">经销商打款意愿(1-10分)</td>
+    <td class="editable cell-data"><input type="text" data-key="l3_6_data" value="3"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l3_6_thresh" value="7"></td>
+    <td class="editable cell-assess"><textarea data-key="l3_6_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l3_6_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-red">利空</span></td>
+    <td class="editable cell-op"><textarea data-key="l3_6_op" rows="1">信心仍在冰点</textarea></td>
+  </tr>
+
+  <!-- ===== 第四层 酒厂报表 (rows 30-36) ===== -->
+  <tr>
+    <td rowspan="7" class="section-label yellow" contenteditable="true">第四层
+酒厂报表（收入、合同负债、利润、现金流）</td>
+    <td class="indicator-cell" contenteditable="true">中证白酒指数</td>
+    <td class="editable cell-data"><input type="text" data-key="l4_1_data" value="89.6"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l4_1_thresh" value="80"></td>
+    <td class="editable cell-assess"><textarea data-key="l4_1_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l4_1_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-green">利好</span></td>
+    <td class="editable cell-op"><textarea data-key="l4_1_op" rows="1">右侧确认信号</textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">贵州茅台</td>
+    <td class="editable cell-data"><input type="text" data-key="l4_2_data" value="−1.8%"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l4_2_thresh" value="0"></td>
+    <td class="editable cell-assess"><textarea data-key="l4_2_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l4_2_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-yellow">观察</span></td>
+    <td class="editable cell-op"><textarea data-key="l4_2_op" rows="1">行业整体接近转正</textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">五粮液</td>
+    <td class="editable cell-data"><input type="text" data-key="l4_3_data" value="−6.2%"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l4_3_thresh" value="0"></td>
+    <td class="editable cell-assess"><textarea data-key="l4_3_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l4_3_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-red">利空</span></td>
+    <td class="editable cell-op"><textarea data-key="l4_3_op" rows="1">次高端出清未完</textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">山西汾酒</td>
+    <td class="editable cell-data"><input type="text" data-key="l4_4_data" placeholder="—"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l4_4_thresh" placeholder="—"></td>
+    <td class="editable cell-assess"><textarea data-key="l4_4_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l4_4_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="editable cell-op"><textarea data-key="l4_4_op" rows="1" placeholder="—"></textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">泸州老窖</td>
+    <td class="editable cell-data"><input type="text" data-key="l4_5_data" placeholder="—"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l4_5_thresh" placeholder="—"></td>
+    <td class="editable cell-assess"><textarea data-key="l4_5_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l4_5_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="editable cell-op"><textarea data-key="l4_5_op" rows="1" placeholder="—"></textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">洋河股份</td>
+    <td class="editable cell-data"><input type="text" data-key="l4_6_data" placeholder="—"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l4_6_thresh" placeholder="—"></td>
+    <td class="editable cell-assess"><textarea data-key="l4_6_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l4_6_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="editable cell-op"><textarea data-key="l4_6_op" rows="1" placeholder="—"></textarea></td>
+  </tr>
+  <tr>
+    <td class="indicator-cell" contenteditable="true">其他</td>
+    <td class="editable cell-data"><input type="text" data-key="l4_7_data" value="−66%"></td>
+    <td class="editable cell-threshold"><input type="text" data-key="l4_7_thresh" value="0"></td>
+    <td class="editable cell-assess"><textarea data-key="l4_7_assess" rows="1" placeholder="—"></textarea></td>
+    <td class="signal-cell" data-key="l4_7_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-red">利空</span></td>
+    <td class="editable cell-op"><textarea data-key="l4_7_op" rows="1">中小酒企持续亏损</textarea></td>
+  </tr>
+
+  <!-- ===== Summary ===== -->
+  <tr class="summary-title">
+    <td colspan="7">白酒周期四层传导综合进度摘要</td>
+  </tr>
+  <tr class="summary-header">
+    <td>第一层：消费需求</td>
+    <td>第二层：销售终端</td>
+    <td>第三层：经销商渠道</td>
+    <td colspan="4">第四层：酒厂报表</td>
+  </tr>
+  <tr class="summary-value">
+    <td><input type="text" data-key="sum_l1" value="复苏已启动·哑铃型分化"></td>
+    <td><input type="text" data-key="sum_l2" value="批价企稳·距确认仍有一步"></td>
+    <td><input type="text" data-key="sum_l3" value="分化剧烈·老窖渠道压力最大"></td>
+    <td colspan="4"><input type="text" data-key="sum_l4" value="龙头复苏·中小持续出清"></td>
+  </tr>
+
+  <!-- ===== Footer ===== -->
+  <tr class="footer-header">
+    <td colspan="2">更新频率</td>
+    <td colspan="5">更新日期</td>
+  </tr>
+  <tr class="footer-value">
+    <td colspan="2"><input type="text" data-key="freq" value="周/月/季"></td>
+    <td colspan="5"><input type="text" data-key="date" value="2026-07-15"></td>
+  </tr>
+
+</table>
+</div>
+
+<script>
+// =============================================
+//  Data persistence (localStorage)
+// =============================================
+const STORAGE_KEY = 'baijiu_cycle_model_data';
+
+// Collect all default values from the DOM
+function collectData() {
+  const data = {};
+  // inputs & textareas
+  document.querySelectorAll('[data-key]').forEach(el => {
+    const key = el.dataset.key;
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+      data[key] = el.value;
+    } else if (el.classList.contains('signal-cell')) {
+      const badge = el.querySelector('.signal-badge');
+      data[key] = badge ? badge.textContent : '未设置';
+    }
+  });
+  // contenteditable cells (section labels & indicators)
+  document.querySelectorAll('[contenteditable="true"]').forEach((el, i) => {
+    data['ce_' + i] = el.textContent;
+  });
+  return data;
+}
+
+function applyData(data) {
+  document.querySelectorAll('[data-key]').forEach(el => {
+    const key = el.dataset.key;
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+      el.value = data[key] !== undefined ? data[key] : '';
+    } else if (el.classList.contains('signal-cell')) {
+      const val = data[key] || '未设置';
+      setSignalBadge(el, val);
+    }
+  });
+  document.querySelectorAll('[contenteditable="true"]').forEach((el, i) => {
+    if (data['ce_' + i] !== undefined) {
+      el.textContent = data['ce_' + i];
+    }
+  });
+}
+
+let saveTimer = null;
+function saveData() {
+  const status = document.getElementById('saveStatus');
+  status.textContent = '保存中…';
+  status.className = 'saving';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    const data = collectData();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    status.textContent = '已保存 ✓';
+    status.className = 'saved';
+    setTimeout(() => { status.textContent = '已保存'; }, 1500);
+  }, 500);
+}
+
+function loadData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try { return JSON.parse(raw); } catch(e) { return null; }
+  }
+  return null;
+}
+
+// =============================================
+//  Signal badge cycling
+// =============================================
+const SIGNAL_STATES = [
+  { text: '未设置', class: 'signal-gray' },
+  { text: '利好',   class: 'signal-green' },
+  { text: '观察',   class: 'signal-yellow' },
+  { text: '利空',   class: 'signal-red' },
+];
+
+function cycleSignal(cell) {
+  const badge = cell.querySelector('.signal-badge');
+  const currentText = badge.textContent;
+  let idx = SIGNAL_STATES.findIndex(s => s.text === currentText);
+  if (idx === -1) idx = 0;
+  idx = (idx + 1) % SIGNAL_STATES.length;
+  const next = SIGNAL_STATES[idx];
+  badge.textContent = next.text;
+  badge.className = 'signal-badge ' + next.class;
+  saveData();
+}
+
+function setSignalBadge(cell, text) {
+  const state = SIGNAL_STATES.find(s => s.text === text) || SIGNAL_STATES[0];
+  const badge = cell.querySelector('.signal-badge');
+  badge.textContent = state.text;
+  badge.className = 'signal-badge ' + state.class;
+}
+
+// =============================================
+//  Auto-resize textareas
+// =============================================
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = (el.scrollHeight + 2) + 'px';
+}
+
+document.querySelectorAll('textarea').forEach(t => {
+  autoResize(t);
+  t.addEventListener('input', () => autoResize(t));
+});
+
+// =============================================
+//  Export / Import
+// =============================================
+function exportJSON() {
+  const data = collectData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '白酒周期模型_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportCSV() {
+  const rows = [];
+  const table = document.getElementById('mainTable');
+  for (const tr of table.querySelectorAll('tr')) {
+    const cells = [];
+    for (const td of tr.querySelectorAll('th, td')) {
+      let text = '';
+      const input = td.querySelector('input, textarea');
+      const badge = td.querySelector('.signal-badge');
+      if (input) text = input.value;
+      else if (badge) text = badge.textContent;
+      else text = td.textContent.trim();
+      // Escape CSV
+      if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+        text = '"' + text.replace(/"/g, '""') + '"';
+      }
+      cells.push(text);
+    }
+    if (cells.length) rows.push(cells.join(','));
+  }
+  const csv = '\uFEFF' + rows.join('\n'); // BOM for Excel
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '白酒周期模型_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJSON() {
+  document.getElementById('fileInput').click();
+}
+
+function handleFileImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      applyData(data);
+      saveData();
+      alert('数据导入成功！');
+    } catch(err) {
+      alert('导入失败：文件格式不正确');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = ''; // reset
+}
+
+function resetData() {
+  if (!confirm('确定要重置所有数据吗？这将清除当前所有输入内容。')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+
+// =============================================
+//  Init
+// =============================================
+// Load saved data
+const saved = loadData();
+if (saved) {
+  applyData(saved);
+}
+
+// Attach auto-save listeners
+document.querySelectorAll('input[data-key], textarea[data-key]').forEach(el => {
+  el.addEventListener('input', saveData);
+});
+document.querySelectorAll('[contenteditable="true"]').forEach((el, i) => {
+  el.addEventListener('input', saveData);
+});
+
+// Initial save status
+const status = document.getElementById('saveStatus');
+status.textContent = saved ? '已加载本地数据' : '默认数据';
+status.className = 'saved';
+
+// Re-resize textareas after data load
+setTimeout(() => {
+  document.querySelectorAll('textarea').forEach(autoResize);
+}, 100);
+</script>
+
+<!-- Token Modal -->
+<div class="modal-overlay" id="tokenModal">
+  <div class="modal-box">
+    <h3>☁️ 云端同步设置</h3>
+    <p>输入 GitHub Personal Access Token (PAT) 启用跨设备数据同步。Token 仅存储在当前浏览器本地，不会上传到任何第三方服务器。</p>
+    <div class="modal-detail">
+      <b>获取 Token 步骤：</b>
+      <ol>
+        <li>打开 <a href="https://github.com/settings/tokens?type=beta" target="_blank">GitHub Settings → Personal access tokens → Fine-grained</a></li>
+        <li>点击 <b>Generate new token</b></li>
+        <li>Token name 随意填（如 <code>baijiu-sync</code>），Expiration 选 <code>No expiration</code> 或一年</li>
+        <li><b>Repository access</b> → 选 <code>Only select repositories</code> → 选 <code>High-Dividend-Strategy</code></li>
+        <li><b>Permissions</b> → Repository permissions → <code>Contents</code> → 选 <b>Read and write</b></li>
+        <li>点击 <b>Generate token</b>，复制生成的 token 粘贴到下方</li>
+      </ol>
+    </div>
+    <input type="password" id="tokenInput" placeholder="github_pat_xxxx..." autocomplete="off">
+    <div class="modal-actions">
+      <button class="btn danger" onclick="clearTokenFromModal()">清除 Token</button>
+      <button class="btn" onclick="hideTokenModal()">取消</button>
+      <button class="btn primary" onclick="saveTokenFromModal()">保存并连接</button>
+    </div>
+  </div>
+</div>
+
+<!-- Snapshot Modal -->
+<div class="modal-overlay" id="snapshotModal">
+  <div class="modal-box">
+    <h3>📸 命名快照（Git 版本历史）</h3>
+    <p>每次保存快照会在 GitHub 仓库创建一个 commit，相当于一个命名版本。可随时从历史快照恢复数据。</p>
+    <div class="snap-input-row">
+      <input type="text" id="snapshotName" placeholder="快照名称（如：2026Q2季度更新）" maxlength="80">
+      <button class="btn primary" onclick="saveSnapshot()">保存快照</button>
+    </div>
+    <div class="snapshot-list" id="snapshotList">
+      <div class="snapshot-empty">加载中…</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="hideSnapshotModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =============================================
+//  Cloud Sync via GitHub Contents API
+//  — 跨设备同步 + 命名快照 (Git commits)
+// =============================================
+const CLOUD_CONFIG = {
+  owner: 'zhaojasonar-zjj',
+  repo: 'High-Dividend-Strategy',
+  path: 'data/baijiu_cycle.json',
+  branch: 'main'
+};
+const TOKEN_KEY = 'github_pat_token';
+let cloudSHA = null;
+let cloudSyncTimer = null;
+let cloudSyncing = false;
+let cloudLoading = false;
+let cloudEnabled = !!localStorage.getItem(TOKEN_KEY);
+
+function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+function setToken(token) {
+  localStorage.setItem(TOKEN_KEY, token);
+  cloudEnabled = !!token.trim();
+  updateCloudStatus();
+}
+function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+  cloudEnabled = false;
+  cloudSHA = null;
+  updateCloudStatus();
+}
+function getCloudHeaders() {
+  return {
+    'Authorization': 'Bearer ' + getToken(),
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28'
+  };
+}
+
+function setCloudStatus(text, state) {
+  const dot = document.getElementById('cloudDot');
+  const el = document.getElementById('cloudStatusText');
+  el.textContent = text;
+  dot.className = 'cloud-dot ' + state;
+}
+
+function updateCloudStatus() {
+  if (!cloudEnabled) {
+    setCloudStatus('未连接云端', 'offline');
+    return;
+  }
+  if (cloudSHA) {
+    setCloudStatus('云端已同步', 'synced');
+  } else {
+    setCloudStatus('已连接·待同步', 'offline');
+  }
+}
+
+// --- Save to GitHub ---
+async function cloudSave(commitMsg) {
+  if (!cloudEnabled) { showTokenModal(); return false; }
+  if (cloudSyncing) return false;
+  cloudSyncing = true;
+  setCloudStatus('正在保存到云端…', 'saving');
+
+  const data = collectData();
+  const payload = {
+    data: data,
+    savedAt: new Date().toISOString(),
+    model: 'baijiu_cycle'
+  };
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))));
+  const msg = commitMsg || ('白酒周期模型更新 · ' + new Date().toLocaleString('zh-CN'));
+
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${CLOUD_CONFIG.owner}/${CLOUD_CONFIG.repo}/contents/${CLOUD_CONFIG.path}`,
+      {
+        method: 'PUT',
+        headers: getCloudHeaders(),
+        body: JSON.stringify({
+          message: msg,
+          content: content,
+          sha: cloudSHA || undefined,
+          branch: CLOUD_CONFIG.branch
+        })
+      }
+    );
+    const result = await resp.json();
+    if (resp.ok) {
+      cloudSHA = result.content.sha;
+      setCloudStatus('已同步 · ' + new Date().toLocaleString('zh-CN'), 'synced');
+      cloudSyncing = false;
+      return true;
+    } else if (resp.status === 409) {
+      setCloudStatus('冲突！远端有更新，请先加载', 'error');
+      cloudSyncing = false;
+      if (confirm('云端数据已被其他设备更新，是否加载最新数据？（本地未保存的修改将丢失）')) {
+        cloudLoadAndRender();
+      }
+      return false;
+    } else {
+      setCloudStatus('保存失败: ' + (result.message || resp.status), 'error');
+      cloudSyncing = false;
+      return false;
+    }
+  } catch(err) {
+    setCloudStatus('网络错误: ' + err.message, 'error');
+    cloudSyncing = false;
+    return false;
+  }
+}
+
+// --- Load from GitHub ---
+async function cloudLoad() {
+  if (!cloudEnabled) { showTokenModal(); return null; }
+  if (cloudSyncing) return null;
+  cloudSyncing = true;
+  cloudLoading = true;
+  setCloudStatus('正在从云端加载…', 'loading');
+
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${CLOUD_CONFIG.owner}/${CLOUD_CONFIG.repo}/contents/${CLOUD_CONFIG.path}?ref=${CLOUD_CONFIG.branch}`,
+      { headers: getCloudHeaders() }
+    );
+    if (resp.status === 404) {
+      cloudSHA = null;
+      setCloudStatus('云端无数据·等待首次保存', 'offline');
+      cloudSyncing = false;
+      cloudLoading = false;
+      return { reason: 'no-file' };
+    }
+    const result = await resp.json();
+    if (resp.ok) {
+      cloudSHA = result.sha;
+      const content = decodeURIComponent(escape(atob(result.content)));
+      const payload = JSON.parse(content);
+      setCloudStatus('已同步 · ' + new Date(payload.savedAt).toLocaleString('zh-CN'), 'synced');
+      cloudSyncing = false;
+      cloudLoading = false;
+      return { reason: 'ok', data: payload.data };
+    } else {
+      setCloudStatus('加载失败: ' + (result.message || resp.status), 'error');
+      cloudSyncing = false;
+      cloudLoading = false;
+      return { reason: 'error', message: result.message };
+    }
+  } catch(err) {
+    setCloudStatus('网络错误: ' + err.message, 'error');
+    cloudSyncing = false;
+    cloudLoading = false;
+    return { reason: 'error', message: err.message };
+  }
+}
+
+// --- Load and apply to UI ---
+async function cloudLoadAndRender() {
+  const result = await cloudLoad();
+  if (result && result.reason === 'ok') {
+    applyData(result.data);
+    saveData();
+    setTimeout(() => {
+      document.querySelectorAll('textarea').forEach(autoResize);
+    }, 50);
+  }
+}
+
+// --- Manual save with optional custom message ---
+async function manualCloudSave() {
+  const msg = prompt('请输入本次保存的说明（可留空使用默认）：', '');
+  if (msg === null) return;
+  await cloudSave(msg || '');
+}
+
+// --- Debounced auto-save to cloud (3s after last edit) ---
+function scheduleCloudSync() {
+  if (cloudLoading || !cloudEnabled) return;
+  if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
+  cloudSyncTimer = setTimeout(() => {
+    cloudSave('自动同步 · ' + new Date().toLocaleString('zh-CN'));
+  }, 3000);
+}
+
+// --- Named Snapshot ---
+async function saveSnapshot() {
+  const name = document.getElementById('snapshotName').value.trim();
+  if (!name) { alert('请输入快照名称'); return; }
+  if (!cloudEnabled) { showTokenModal(); return; }
+  const ok = await cloudSave('📸 快照: ' + name);
+  if (ok) {
+    document.getElementById('snapshotName').value = '';
+    loadSnapshotList();
+  }
+}
+
+// --- List commits (snapshots) for the data file ---
+async function loadSnapshotList() {
+  const listEl = document.getElementById('snapshotList');
+  if (!cloudEnabled) {
+    listEl.innerHTML = '<div class="snapshot-empty">请先连接云端（点击⚙设置输入 Token）</div>';
+    return;
+  }
+  listEl.innerHTML = '<div class="snapshot-empty">加载中…</div>';
+
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${CLOUD_CONFIG.owner}/${CLOUD_CONFIG.repo}/commits?path=${CLOUD_CONFIG.path}&per_page=20`,
+      { headers: getCloudHeaders() }
+    );
+    const commits = await resp.json();
+    if (!resp.ok) {
+      listEl.innerHTML = '<div class="snapshot-empty">加载失败: ' + (commits.message || resp.status) + '</div>';
+      return;
+    }
+    if (!commits.length) {
+      listEl.innerHTML = '<div class="snapshot-empty">暂无快照记录</div>';
+      return;
+    }
+    listEl.innerHTML = '';
+    commits.forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'snapshot-item';
+      const date = new Date(c.commit.author.date).toLocaleString('zh-CN');
+      const msg = c.commit.message;
+      item.innerHTML = `
+        <span class="snap-msg" title="${escapeHtml(msg)}">${escapeHtml(msg)}</span>
+        <span class="snap-date">${date}</span>
+        <button class="snap-restore" onclick="restoreSnapshot('${c.sha}')">恢复</button>
+      `;
+      listEl.appendChild(item);
+    });
+  } catch(err) {
+    listEl.innerHTML = '<div class="snapshot-empty">网络错误: ' + err.message + '</div>';
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// --- Restore a snapshot by commit SHA ---
+async function restoreSnapshot(sha) {
+  if (!confirm('恢复此快照将覆盖当前数据，确定继续？')) return;
+  setCloudStatus('正在恢复快照…', 'loading');
+
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${CLOUD_CONFIG.owner}/${CLOUD_CONFIG.repo}/contents/${CLOUD_CONFIG.path}?ref=${sha}`,
+      { headers: getCloudHeaders() }
+    );
+    const result = await resp.json();
+    if (resp.ok) {
+      const content = decodeURIComponent(escape(atob(result.content)));
+      const payload = JSON.parse(content);
+      applyData(payload.data);
+      saveData();
+      setCloudStatus('已恢复快照·下次保存将创建新版本', 'synced');
+      setTimeout(() => {
+        document.querySelectorAll('textarea').forEach(autoResize);
+      }, 50);
+      hideSnapshotModal();
+    } else {
+      setCloudStatus('恢复失败: ' + (result.message || resp.status), 'error');
+    }
+  } catch(err) {
+    setCloudStatus('网络错误: ' + err.message, 'error');
+  }
+}
+
+// --- Modal helpers ---
+function showTokenModal() {
+  document.getElementById('tokenInput').value = getToken();
+  document.getElementById('tokenModal').classList.add('show');
+}
+function hideTokenModal() {
+  document.getElementById('tokenModal').classList.remove('show');
+}
+function saveTokenFromModal() {
+  const token = document.getElementById('tokenInput').value.trim();
+  if (!token) { alert('请输入 Token'); return; }
+  setToken(token);
+  hideTokenModal();
+  cloudLoadAndRender();
+}
+function clearTokenFromModal() {
+  if (!confirm('确定清除 Token 并断开云端同步？')) return;
+  clearToken();
+  hideTokenModal();
+}
+
+function showSnapshotModal() {
+  document.getElementById('snapshotModal').classList.add('show');
+  loadSnapshotList();
+}
+function hideSnapshotModal() {
+  document.getElementById('snapshotModal').classList.remove('show');
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('show');
+  });
+});
+
+// =============================================
+//  Init Cloud Sync
+// =============================================
+(async function initCloudSync() {
+  updateCloudStatus();
+  if (cloudEnabled) {
+    const result = await cloudLoad();
+    if (result && result.reason === 'ok') {
+      applyData(result.data);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(result.data));
+      setTimeout(() => {
+        document.querySelectorAll('textarea').forEach(autoResize);
+      }, 50);
+      const status = document.getElementById('saveStatus');
+      status.textContent = '已从云端加载';
+      status.className = 'saved';
+    }
+  }
+})();
+
+// Hook saveData to also trigger cloud sync
+const _originalSaveData = saveData;
+saveData = function() {
+  _originalSaveData();
+  scheduleCloudSync();
+};
+
+// Re-attach listeners with the hooked saveData
+document.querySelectorAll('input[data-key], textarea[data-key]').forEach(el => {
+  el.addEventListener('input', saveData);
+});
+document.querySelectorAll('[contenteditable="true"]').forEach((el) => {
+  el.addEventListener('input', saveData);
+});
+</script>
+
+</body>
+</html>
