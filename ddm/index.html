@@ -881,7 +881,8 @@ function getDefaultScenarios() {
 let scenarios = getDefaultScenarios();
 let currentStockName = null;      // Currently selected stock
 let cloudSha = null;               // SHA of current file on GitHub
-let cloudLoading = false;          // Suppress auto-save during cloud load
+let cloudLoading = true;           // Suppress auto-save during initial load (set false AFTER first data load)
+let dataLoaded = false;            // True after first successful data load (cloud or local)
 let saveTimer = null;              // Debounce timer for auto-save
 let stockList = [];                // Cached list of stock names
 let pendingConflictData = null;    // Data for conflict resolution
@@ -1190,6 +1191,7 @@ async function loadStockList() {
     await loadStock(currentStockName);
   } catch (e) {
     console.error('loadStockList error:', e);
+    cloudLoading = false;  // Release lock on error
     setSyncStatus('error', '❌ 加载失败');
     showToast('加载股票列表失败: ' + e.message, 'error');
   }
@@ -1198,11 +1200,13 @@ async function loadStockList() {
 async function loadStock(name) {
   if (!name) return;
 
-  // Save current stock first if dirty
+  // Save current stock first if dirty AND data was already loaded (not default)
   if (saveTimer) {
     clearTimeout(saveTimer);
     saveTimer = null;
-    await saveCurrentStock();
+    if (dataLoaded) {
+      await saveCurrentStock();
+    }
   }
 
   currentStockName = name;
@@ -1220,16 +1224,21 @@ async function loadStock(name) {
       const data = JSON.parse(base64ToUtf8(file.content));
       cloudSha = file.sha;
       deserializeState(data);
+      dataLoaded = true;
+      cloudLoading = false;
       setSyncStatus('synced');
     } else {
-      // File doesn't exist: use default data
+      // File doesn't exist: use default data (new stock)
       cloudSha = null;
       deserializeState({ stockName: name, params: DEFAULT_PARAMS, scenarios: getDefaultScenarios() });
+      dataLoaded = true;
+      cloudLoading = false;
       setSyncStatus('idle', '📝 新股票');
     }
     document.getElementById('stockNameDisplay').textContent = name;
   } catch (e) {
     console.error('loadStock error:', e);
+    cloudLoading = false;  // Release lock on error so user can retry
     setSyncStatus('error', '❌ 加载失败');
     showToast('加载股票失败: ' + e.message, 'error');
   }
@@ -1244,6 +1253,8 @@ function loadStockFromLocal() {
     deserializeState({ stockName: currentStockName, params: DEFAULT_PARAMS, scenarios: getDefaultScenarios() });
     saveToLocal();
   }
+  dataLoaded = true;
+  cloudLoading = false;
   document.getElementById('stockNameDisplay').textContent = currentStockName;
   setSyncStatus('local');
 }
@@ -1271,11 +1282,13 @@ async function createStock() {
 
   closeModal('newStockModal');
 
-  // Save current stock first
+  // Save current stock first (only if data was loaded, not default)
   if (saveTimer) {
     clearTimeout(saveTimer);
     saveTimer = null;
-    await saveCurrentStock();
+    if (dataLoaded) {
+      await saveCurrentStock();
+    }
   }
 
   // Switch to new stock with default data (same as 示例高股息股)
@@ -1296,6 +1309,7 @@ async function createStock() {
   buildBayesTable();
   updateJudgmentHint();
   calculateAll();
+  dataLoaded = true;
   cloudLoading = false;
 
   stockList.push(name);
@@ -1625,6 +1639,7 @@ function deleteSnapshotLocal(name) {
 // ============================================================
 function scheduleAutoSave() {
   if (cloudLoading) return;
+  if (!dataLoaded) return;  // Don't auto-save until real data has been loaded
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     await saveCurrentStock();
