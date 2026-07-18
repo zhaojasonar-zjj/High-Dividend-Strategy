@@ -448,9 +448,9 @@
   }
   .modal-actions .btn.danger { margin-right: auto; }
 
-  /* === Snapshot List === */
+  /* === Snapshot List (DDM-style) === */
   .snapshot-list {
-    max-height: 360px;
+    max-height: 320px;
     overflow-y: auto;
     border: 1px solid var(--c-border);
     border-radius: 6px;
@@ -459,7 +459,7 @@
   .snapshot-item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: space-between;
     padding: 10px 14px;
     border-bottom: 1px solid #eee;
     font-size: 13px;
@@ -467,37 +467,42 @@
   }
   .snapshot-item:last-child { border-bottom: none; }
   .snapshot-item:hover { background: #f8f9fa; }
-  .snapshot-item .snap-msg {
-    flex: 1;
-    font-weight: 500;
+  .snapshot-item .snap-info { flex: 1; }
+  .snapshot-item .snap-label {
+    font-weight: 600;
     color: var(--c-text-dark);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .snapshot-item .snap-date {
+  .snapshot-item .snap-time {
     font-size: 11px;
     color: #888;
-    white-space: nowrap;
   }
-  .snapshot-item .snap-restore {
-    padding: 3px 10px;
+  .snapshot-item .snap-actions {
+    display: flex;
+    gap: 6px;
+    margin-left: 10px;
+  }
+  .snap-btn {
+    padding: 4px 10px;
     font-size: 11px;
     border: 1px solid var(--c-border);
     border-radius: 4px;
     background: #fff;
     cursor: pointer;
-    color: #0070C0;
+    color: var(--c-text-dark);
     transition: all 0.15s;
     white-space: nowrap;
   }
-  .snapshot-item .snap-restore:hover {
-    background: #E6F1FB;
-    border-color: #0070C0;
-  }
+  .snap-btn:hover { background: #f0f0f0; }
+  .snap-btn.restore { color: #1a7a3a; border-color: #1a7a3a; }
+  .snap-btn.restore:hover { background: #E1F5EE; }
+  .snap-btn.delete { color: #c0392b; border-color: #c0392b; }
+  .snap-btn.delete:hover { background: #fef2f2; }
   .snapshot-empty {
     text-align: center;
-    padding: 30px;
+    padding: 24px;
     color: #888;
     font-size: 13px;
   }
@@ -518,6 +523,28 @@
     outline: 2px solid #BA7517;
     background: #fff;
   }
+
+  /* === Toast === */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 10000;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: #1a7a3a; }
+  .toast.error   { background: #c0392b; }
+  .toast.info    { background: #3D3D3A; }
 
   /* === Toolbar separator === */
   .toolbar-sep {
@@ -1128,12 +1155,13 @@ setTimeout(() => {
 <!-- Snapshot Modal -->
 <div class="modal-overlay" id="snapshotModal">
   <div class="modal-box">
-    <h3>📸 命名快照（Git 版本历史）</h3>
-    <p>每次保存快照会在 GitHub 仓库创建一个 commit，相当于一个命名版本。可随时从历史快照恢复数据。</p>
+    <h3>📸 命名快照</h3>
+    <p>保存当前数据的命名快照（如"Q2财报前"），用于关键时点标记。快照独立存储，不影响主数据。</p>
     <div class="snap-input-row">
-      <input type="text" id="snapshotName" placeholder="快照名称（如：2026Q2季度更新）" maxlength="80">
+      <input type="text" id="snapshotName" placeholder="快照标签（如：2026Q2季度更新）" maxlength="80" autocomplete="off">
       <button class="btn primary" onclick="saveSnapshot()">保存快照</button>
     </div>
+    <hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
     <div class="snapshot-list" id="snapshotList">
       <div class="snapshot-empty">加载中…</div>
     </div>
@@ -1142,6 +1170,9 @@ setTimeout(() => {
     </div>
   </div>
 </div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
 
 <script>
 // =============================================
@@ -1152,6 +1183,7 @@ const CLOUD_CONFIG = {
   owner: 'zhaojasonar-zjj',
   repo: 'High-Dividend-Strategy',
   path: 'data/baijiu_cycle.json',
+  snapshotsDir: 'data/baijiu_snapshots',
   branch: 'main'
 };
 const TOKEN_KEY = 'github_pat_token';
@@ -1326,57 +1358,93 @@ function scheduleCloudSync() {
   }, 3000);
 }
 
-// --- Named Snapshot ---
-async function saveSnapshot() {
-  const name = document.getElementById('snapshotName').value.trim();
-  if (!name) { alert('请输入快照名称'); return; }
-  if (!cloudEnabled) { showTokenModal(); return; }
-  const ok = await cloudSave('📸 快照: ' + name);
-  if (ok) {
-    document.getElementById('snapshotName').value = '';
-    loadSnapshotList();
-  }
+// =============================================
+//  Named Snapshots (DDM-style: separate files)
+//  — 独立文件存储 · 可恢复 · 可删除 · 支持本地
+// =============================================
+const LOCAL_SNAPSHOTS_KEY = 'baijiu_local_snapshots';
+
+// --- Base64 helpers (UTF-8 safe) ---
+function utf8ToBase64(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function base64ToUtf8(b64) {
+  return decodeURIComponent(escape(atob(b64)));
 }
 
-// --- List commits (snapshots) for the data file ---
-async function loadSnapshotList() {
-  const listEl = document.getElementById('snapshotList');
-  if (!cloudEnabled) {
-    listEl.innerHTML = '<div class="snapshot-empty">请先连接云端（点击⚙设置输入 Token）</div>';
-    return;
-  }
-  listEl.innerHTML = '<div class="snapshot-empty">加载中…</div>';
+// --- Toast ---
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (type || 'info') + ' show';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.classList.remove('show'); }, 3000);
+}
 
-  try {
-    const resp = await fetch(
-      `https://api.github.com/repos/${CLOUD_CONFIG.owner}/${CLOUD_CONFIG.repo}/commits?path=${CLOUD_CONFIG.path}&per_page=20`,
-      { headers: getCloudHeaders() }
-    );
-    const commits = await resp.json();
-    if (!resp.ok) {
-      listEl.innerHTML = '<div class="snapshot-empty">加载失败: ' + (commits.message || resp.status) + '</div>';
-      return;
+// --- GitHub API helpers (for snapshots) ---
+async function githubGet(path) {
+  const url = `https://api.github.com/repos/${CLOUD_CONFIG.owner}/${CLOUD_CONFIG.repo}/contents/${path}?ref=${CLOUD_CONFIG.branch}`;
+  const resp = await fetch(url, { headers: getCloudHeaders() });
+  if (resp.status === 404) return null;
+  if (resp.status === 401) throw new Error('PAT 无效或已过期');
+  if (!resp.ok) throw new Error(`GitHub API ${resp.status}: ${resp.statusText}`);
+  return resp.json();
+}
+
+async function githubPut(path, content, sha, message) {
+  const url = `https://api.github.com/repos/${CLOUD_CONFIG.owner}/${CLOUD_CONFIG.repo}/contents/${path}`;
+  const body = {
+    message: message,
+    content: utf8ToBase64(content),
+    branch: CLOUD_CONFIG.branch
+  };
+  if (sha) body.sha = sha;
+
+  const resp = await fetch(url, {
+    method: 'PUT',
+    headers: getCloudHeaders(),
+    body: JSON.stringify(body)
+  });
+
+  if (resp.status === 409) throw new Error('CONFLICT');
+  if (resp.status === 401) throw new Error('PAT 无效或已过期');
+
+  // 422: file exists but SHA wasn't supplied → auto-fetch SHA and retry once
+  if (resp.status === 422 && !sha) {
+    const existing = await githubGet(path);
+    if (existing && existing.sha) {
+      return githubPut(path, content, existing.sha, message);
     }
-    if (!commits.length) {
-      listEl.innerHTML = '<div class="snapshot-empty">暂无快照记录</div>';
-      return;
-    }
-    listEl.innerHTML = '';
-    commits.forEach(c => {
-      const item = document.createElement('div');
-      item.className = 'snapshot-item';
-      const date = new Date(c.commit.author.date).toLocaleString('zh-CN');
-      const msg = c.commit.message;
-      item.innerHTML = `
-        <span class="snap-msg" title="${escapeHtml(msg)}">${escapeHtml(msg)}</span>
-        <span class="snap-date">${date}</span>
-        <button class="snap-restore" onclick="restoreSnapshot('${c.sha}')">恢复</button>
-      `;
-      listEl.appendChild(item);
-    });
-  } catch(err) {
-    listEl.innerHTML = '<div class="snapshot-empty">网络错误: ' + err.message + '</div>';
   }
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(`GitHub API ${resp.status}: ${err.message || resp.statusText}`);
+  }
+  return resp.json();
+}
+
+async function githubList(dirPath) {
+  const url = `https://api.github.com/repos/${CLOUD_CONFIG.owner}/${CLOUD_CONFIG.repo}/contents/${dirPath}?ref=${CLOUD_CONFIG.branch}`;
+  const resp = await fetch(url, { headers: getCloudHeaders() });
+  if (resp.status === 404) return [];
+  if (resp.status === 401) throw new Error('PAT 无效或已过期');
+  if (!resp.ok) throw new Error(`GitHub API ${resp.status}: ${resp.statusText}`);
+  return resp.json();
+}
+
+async function githubDelete(path, sha, message) {
+  const url = `https://api.github.com/repos/${CLOUD_CONFIG.owner}/${CLOUD_CONFIG.repo}/contents/${path}`;
+  const resp = await fetch(url, {
+    method: 'DELETE',
+    headers: getCloudHeaders(),
+    body: JSON.stringify({ message, sha, branch: CLOUD_CONFIG.branch })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(`Delete failed: ${err.message || resp.statusText}`);
+  }
+  return resp.json();
 }
 
 function escapeHtml(str) {
@@ -1385,33 +1453,179 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// --- Restore a snapshot by commit SHA ---
-async function restoreSnapshot(sha) {
-  if (!confirm('恢复此快照将覆盖当前数据，确定继续？')) return;
-  setCloudStatus('正在恢复快照…', 'loading');
+// --- Save snapshot ---
+async function saveSnapshot() {
+  const label = document.getElementById('snapshotName').value.trim();
+  if (!label) { showToast('请输入快照标签', 'error'); return; }
 
-  try {
-    const resp = await fetch(
-      `https://api.github.com/repos/${CLOUD_CONFIG.owner}/${CLOUD_CONFIG.repo}/contents/${CLOUD_CONFIG.path}?ref=${sha}`,
-      { headers: getCloudHeaders() }
-    );
-    const result = await resp.json();
-    if (resp.ok) {
-      const content = decodeURIComponent(escape(atob(result.content)));
-      const payload = JSON.parse(content);
-      applyData(payload.data);
-      saveData();
-      setCloudStatus('已恢复快照·下次保存将创建新版本', 'synced');
-      setTimeout(() => {
-        document.querySelectorAll('textarea').forEach(autoResize);
-      }, 50);
-      hideSnapshotModal();
-    } else {
-      setCloudStatus('恢复失败: ' + (result.message || resp.status), 'error');
+  // Avoid path-unsafe characters in label
+  const safeLabel = label.replace(/[\/\\:*?"<>|]/g, '_');
+  const ts = new Date();
+  const tsStr = ts.getFullYear() +
+    String(ts.getMonth()+1).padStart(2,'0') +
+    String(ts.getDate()).padStart(2,'0') +
+    String(ts.getHours()).padStart(2,'0') +
+    String(ts.getMinutes()).padStart(2,'0') +
+    String(ts.getSeconds()).padStart(2,'0');
+  const fileName = `${tsStr}_${safeLabel}.json`;
+  const path = `${CLOUD_CONFIG.snapshotsDir}/${fileName}`;
+
+  const snapData = collectData();
+  snapData.snapshotMeta = {
+    label: label,
+    createdAt: ts.toISOString(),
+    model: 'baijiu_cycle'
+  };
+
+  if (cloudEnabled) {
+    try {
+      setCloudStatus('正在保存快照…', 'saving');
+      await githubPut(path, JSON.stringify(snapData, null, 2), null, `白酒周期: 保存快照 - ${label}`);
+      setCloudStatus('云端已同步', 'synced');
+      showToast(`快照已保存至云端: ${label}`, 'success');
+    } catch (e) {
+      setCloudStatus('快照保存失败', 'error');
+      showToast('保存快照失败: ' + e.message, 'error');
+      return;
     }
-  } catch(err) {
-    setCloudStatus('网络错误: ' + err.message, 'error');
+  } else {
+    // Local snapshot (no PAT)
+    const localSnaps = JSON.parse(localStorage.getItem(LOCAL_SNAPSHOTS_KEY) || '[]');
+    localSnaps.push({ name: fileName, data: snapData });
+    localStorage.setItem(LOCAL_SNAPSHOTS_KEY, JSON.stringify(localSnaps));
+    showToast(`快照已保存至本地: ${label}`, 'success');
   }
+
+  // Refresh list & clear input
+  await loadSnapshotList();
+  document.getElementById('snapshotName').value = '';
+}
+
+// --- List snapshots ---
+async function loadSnapshotList() {
+  const listEl = document.getElementById('snapshotList');
+
+  if (!cloudEnabled) {
+    // Local snapshots
+    const localSnaps = JSON.parse(localStorage.getItem(LOCAL_SNAPSHOTS_KEY) || '[]');
+    if (localSnaps.length === 0) {
+      listEl.innerHTML = '<div class="snapshot-empty">暂无本地快照</div>';
+      return;
+    }
+    listEl.innerHTML = localSnaps.sort((a,b) => b.name.localeCompare(a.name)).map(s => {
+      const parts = s.name.replace(/\.json$/, '').split('_');
+      const tsStr = parts[0] || '';
+      const label = parts.slice(1).join('_') || '(未命名)';
+      let timeDisplay = tsStr;
+      if (tsStr.length === 14) {
+        timeDisplay = tsStr.substring(0,4) + '-' + tsStr.substring(4,6) + '-' + tsStr.substring(6,8) +
+          ' ' + tsStr.substring(8,10) + ':' + tsStr.substring(10,12);
+      }
+      return `<div class="snapshot-item">
+        <div class="snap-info">
+          <div class="snap-label">${escapeHtml(label)}</div>
+          <div class="snap-time">${timeDisplay}</div>
+        </div>
+        <div class="snap-actions">
+          <button class="snap-btn restore" onclick="restoreSnapshotLocal('${s.name}')">恢复</button>
+          <button class="snap-btn delete" onclick="deleteSnapshotLocal('${s.name}')">删除</button>
+        </div>
+      </div>`;
+    }).join('');
+    return;
+  }
+
+  // Cloud snapshots
+  listEl.innerHTML = '<div class="snapshot-empty">加载中…</div>';
+  try {
+    const files = await githubList(CLOUD_CONFIG.snapshotsDir);
+    const mySnaps = files
+      .filter(f => f.name.endsWith('.json'))
+      .sort((a, b) => b.name.localeCompare(a.name)); // Newest first
+
+    if (mySnaps.length === 0) {
+      listEl.innerHTML = '<div class="snapshot-empty">暂无快照</div>';
+      return;
+    }
+
+    listEl.innerHTML = mySnaps.map(f => {
+      const parts = f.name.replace(/\.json$/, '').split('_');
+      const tsStr = parts[0] || '';
+      const label = parts.slice(1).join('_') || '(未命名)';
+      let timeDisplay = tsStr;
+      if (tsStr.length === 14) {
+        timeDisplay = tsStr.substring(0,4) + '-' + tsStr.substring(4,6) + '-' + tsStr.substring(6,8) +
+          ' ' + tsStr.substring(8,10) + ':' + tsStr.substring(10,12);
+      }
+      return `<div class="snapshot-item">
+        <div class="snap-info">
+          <div class="snap-label" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
+          <div class="snap-time">${timeDisplay}</div>
+        </div>
+        <div class="snap-actions">
+          <button class="snap-btn restore" onclick="restoreSnapshot('${f.path}')">恢复</button>
+          <button class="snap-btn delete" onclick="deleteSnapshot('${f.path}', '${f.sha}', '${f.name}')">删除</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    listEl.innerHTML = `<div class="snapshot-empty">加载失败: ${e.message}</div>`;
+  }
+}
+
+// --- Restore from cloud ---
+async function restoreSnapshot(path) {
+  if (!confirm('恢复快照将覆盖当前数据，确定？')) return;
+  try {
+    setCloudStatus('正在恢复快照…', 'loading');
+    const file = await githubGet(path);
+    if (file) {
+      const data = JSON.parse(base64ToUtf8(file.content));
+      applyData(data);
+      setCloudStatus('已恢复快照·需手动保存才会写入主数据', 'synced');
+      showToast('快照已恢复（需手动保存才会写入主数据）', 'success');
+      setTimeout(() => { document.querySelectorAll('textarea').forEach(autoResize); }, 50);
+      hideSnapshotModal();
+    }
+  } catch (e) {
+    setCloudStatus('恢复失败', 'error');
+    showToast('恢复失败: ' + e.message, 'error');
+  }
+}
+
+// --- Delete from cloud ---
+async function deleteSnapshot(path, sha, name) {
+  if (!confirm(`删除快照「${name}」？`)) return;
+  try {
+    await githubDelete(path, sha, `白酒周期: 删除快照 ${name}`);
+    showToast('快照已删除', 'success');
+    await loadSnapshotList();
+  } catch (e) {
+    showToast('删除失败: ' + e.message, 'error');
+  }
+}
+
+// --- Local snapshot restore/delete (no PAT) ---
+function restoreSnapshotLocal(name) {
+  if (!confirm('恢复快照将覆盖当前数据，确定？')) return;
+  const localSnaps = JSON.parse(localStorage.getItem(LOCAL_SNAPSHOTS_KEY) || '[]');
+  const snap = localSnaps.find(s => s.name === name);
+  if (snap && snap.data) {
+    applyData(snap.data);
+    showToast('快照已恢复（需手动保存才会写入主数据）', 'success');
+    setTimeout(() => { document.querySelectorAll('textarea').forEach(autoResize); }, 50);
+  } else {
+    showToast('快照数据损坏', 'error');
+  }
+}
+
+function deleteSnapshotLocal(name) {
+  if (!confirm(`删除快照「${name}」？`)) return;
+  let localSnaps = JSON.parse(localStorage.getItem(LOCAL_SNAPSHOTS_KEY) || '[]');
+  localSnaps = localSnaps.filter(s => s.name !== name);
+  localStorage.setItem(LOCAL_SNAPSHOTS_KEY, JSON.stringify(localSnaps));
+  showToast('快照已删除', 'success');
+  loadSnapshotList();
 }
 
 // --- Modal helpers ---
