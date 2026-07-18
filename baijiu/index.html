@@ -535,7 +535,6 @@
   <button class="btn primary" onclick="exportJSON()">导出 JSON</button>
   <button class="btn" onclick="exportCSV()">导出 CSV</button>
   <button class="btn" onclick="importJSON()">导入数据</button>
-  <button class="btn" onclick="resetData()">重置数据</button>
   <input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleFileImport(event)">
   <div class="toolbar-sep"></div>
   <!-- Cloud Sync Bar -->
@@ -1071,12 +1070,6 @@ function handleFileImport(event) {
   };
   reader.readAsText(file);
   event.target.value = ''; // reset
-}
-
-function resetData() {
-  if (!confirm('确定要重置所有数据吗？这将清除当前所有输入内容。')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  location.reload();
 }
 
 // =============================================
