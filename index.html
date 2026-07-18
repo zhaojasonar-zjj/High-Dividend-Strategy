@@ -728,6 +728,89 @@
   }
   .cloud-btn:hover { background: rgba(255,255,255,0.2); }
 
+  /* Snapshot modal */
+  .snapshot-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+  .snapshot-modal.show { display: flex; }
+  .snapshot-modal-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 28px 32px;
+    max-width: 560px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .snapshot-modal-box h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .snapshot-modal-box p {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+  .snapshot-modal-box input[type="text"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    background: var(--input-bg);
+    color: var(--text);
+    box-sizing: border-box;
+  }
+  .snapshot-modal-box input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+  .snapshot-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .snapshot-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .snapshot-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .snapshot-item:last-child { border-bottom: none; }
+  .snapshot-item .snap-info { flex: 1; }
+  .snapshot-item .snap-label { font-weight: 600; color: var(--text); }
+  .snapshot-item .snap-time { font-size: 11px; color: var(--text-muted); }
+  .snapshot-item .snap-actions { display: flex; gap: 6px; }
+  .snap-btn {
+    padding: 4px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    background: #fff;
+    color: #333;
+  }
+  .snap-btn:hover { background: #f0f0f0; }
+  .snap-btn.restore { color: #1e7e34; border-color: #1e7e34; }
+  .snap-btn.delete { color: #dc3545; border-color: #dc3545; }
+  .empty-hint { padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
   /* Token modal */
   .token-modal {
     display: none;
@@ -859,6 +942,7 @@
       <span id="cloud-status-text">未连接云端</span>
       <button class="cloud-btn" onclick="manualCloudSave()" title="手动保存到云端">⬆ 保存</button>
       <button class="cloud-btn" onclick="cloudLoadAndRender()" title="从云端加载最新数据">⬇ 加载</button>
+      <button class="cloud-btn" onclick="showSnapshotModal()" title="保存命名快照">📸 快照</button>
       <button class="cloud-btn" onclick="showTokenModal()" title="云端同步设置">⚙ 设置</button>
     </div>
     <button class="btn" onclick="exportData()">导出 JSON</button>
@@ -921,6 +1005,17 @@
           <li>贝叶斯更新最怕先验锚定和确认偏误：建议在看到新财报前，先把先验概率和似然比判定标准写下来，再对照数据打分，而不是看完数据后回头找理由。</li>
         </ol>
         <div class="blue-note">💡 <b>蓝色背景</b> = 需要你手动填写的输入；<b>灰色背景</b> = 自动计算的公式，不要手动覆盖。</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">版本回溯：Git 历史 + 命名快照</div>
+      <div class="instr-panel">
+        <p>本工具采用双层版本回溯策略，确保数据安全可追溯：</p>
+        <ul>
+          <li><b>Git 历史（自动）</b>：每次云端保存都会产生一个 Git commit，可在 GitHub 仓库查看完整变更历史。无需手动操作。</li>
+          <li><b>命名快照（手动）</b>：点击顶栏「📸 快照」按钮，为当前数据打上命名标签（如"Q2财报前"）。适用于关键时点标记，方便随时回溯到某个里程碑状态。快照独立存储，不影响主数据；恢复后需手动保存才会写入主数据。</li>
+        </ul>
+        <div class="blue-note">💡 无 Token 时快照存储在浏览器本地；连接云端后快照保存至 <code>data/portfolio_snapshots/</code> 目录。</div>
       </div>
     </div>
   </div>
@@ -1298,6 +1393,24 @@
       <button class="btn btn-danger" onclick="clearTokenFromModal()">清除 Token</button>
       <button class="btn" onclick="hideTokenModal()">取消</button>
       <button class="btn btn-primary" onclick="saveTokenFromModal()">保存并连接</button>
+    </div>
+  </div>
+</div>
+
+<!-- Snapshot Modal -->
+<div class="snapshot-modal" id="snapshot-modal">
+  <div class="snapshot-modal-box">
+    <h3>📸 命名快照</h3>
+    <p>保存当前所有数据的命名快照（如"Q2财报前"），用于关键时点标记。快照独立存储，不影响主数据。恢复后需手动保存才会写入主数据。</p>
+    <input type="text" id="snapshot-label" placeholder="如：Q2财报前" autocomplete="off">
+    <div class="snapshot-actions">
+      <button class="btn" onclick="closeSnapshotModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveSnapshot()">保存快照</button>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+    <label style="font-size:13px;font-weight:600;color:var(--text);">历史快照</label>
+    <div class="snapshot-list" id="snapshot-list">
+      <div class="empty-hint">加载中...</div>
     </div>
   </div>
 </div>
@@ -3097,6 +3210,7 @@ const CLOUD_CONFIG = {
   owner: 'zhaojasonar-zjj',
   repo: 'High-Dividend-Strategy',
   path: 'data/portfolio.json',
+  snapshotsDir: 'data/portfolio_snapshots',
   branch: 'main'
 };
 const TOKEN_KEY = 'github_pat_token';
@@ -3366,6 +3480,259 @@ async function cloudLoadAndRender() {
     showTokenModal();
   }
   cloudLoading = false;
+}
+
+// ============ GitHub API helpers (for snapshots) ============
+async function githubGetFile(path) {
+  const url = 'https://api.github.com/repos/' + CLOUD_CONFIG.owner + '/' + CLOUD_CONFIG.repo + '/contents/' + path + '?ref=' + CLOUD_CONFIG.branch;
+  const resp = await fetch(url, { headers: getCloudHeaders() });
+  if (resp.status === 404) return null;
+  if (!resp.ok) throw new Error('GitHub API ' + resp.status);
+  return resp.json();
+}
+
+async function githubPutFile(path, content, sha, message) {
+  const url = 'https://api.github.com/repos/' + CLOUD_CONFIG.owner + '/' + CLOUD_CONFIG.repo + '/contents/' + path;
+  const body = { message, content, branch: CLOUD_CONFIG.branch };
+  if (sha) body.sha = sha;
+  const resp = await fetch(url, {
+    method: 'PUT',
+    headers: getCloudHeaders(),
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.message || 'HTTP ' + resp.status);
+  }
+  return resp.json();
+}
+
+async function githubListFiles(dirPath) {
+  const url = 'https://api.github.com/repos/' + CLOUD_CONFIG.owner + '/' + CLOUD_CONFIG.repo + '/contents/' + dirPath + '?ref=' + CLOUD_CONFIG.branch;
+  const resp = await fetch(url, { headers: getCloudHeaders() });
+  if (resp.status === 404) return [];
+  if (!resp.ok) throw new Error('GitHub API ' + resp.status);
+  return resp.json();
+}
+
+async function githubDeleteFile(path, sha, message) {
+  const url = 'https://api.github.com/repos/' + CLOUD_CONFIG.owner + '/' + CLOUD_CONFIG.repo + '/contents/' + path;
+  const resp = await fetch(url, {
+    method: 'DELETE',
+    headers: getCloudHeaders(),
+    body: JSON.stringify({ message, sha, branch: CLOUD_CONFIG.branch })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.message || 'HTTP ' + resp.status);
+  }
+  return resp.json();
+}
+
+// ============ Named Snapshots ============
+const LOCAL_SNAPSHOTS_KEY = 'portfolio_local_snapshots';
+
+function showSnapshotModal() {
+  document.getElementById('snapshot-label').value = '';
+  document.getElementById('snapshot-modal').classList.add('show');
+  loadSnapshotList();
+}
+
+function closeSnapshotModal() {
+  document.getElementById('snapshot-modal').classList.remove('show');
+}
+
+async function saveSnapshot() {
+  const label = document.getElementById('snapshot-label').value.trim();
+  if (!label) { alert('请输入快照标签'); return; }
+
+  const safeLabel = label.replace(/[\/\\:*?"<>|]/g, '_');
+  const ts = new Date();
+  const tsStr = ts.getFullYear() +
+    String(ts.getMonth()+1).padStart(2,'0') +
+    String(ts.getDate()).padStart(2,'0') +
+    String(ts.getHours()).padStart(2,'0') +
+    String(ts.getMinutes()).padStart(2,'0') +
+    String(ts.getSeconds()).padStart(2,'0');
+  const fileName = tsStr + '_' + safeLabel + '.json';
+
+  const snapData = collectAllData();
+  snapData.snapshotMeta = {
+    label: label,
+    createdAt: ts.toISOString()
+  };
+
+  if (cloudEnabled) {
+    try {
+      setCloudStatus('正在保存快照…', 'saving');
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(snapData, null, 2))));
+      await githubPutFile(
+        CLOUD_CONFIG.snapshotsDir + '/' + fileName,
+        content,
+        null,
+        'Portfolio: 保存快照 - ' + label
+      );
+      setCloudStatus('已保存 · ' + new Date().toLocaleString('zh-CN'), 'synced');
+      alert('快照已保存至云端: ' + label);
+    } catch(e) {
+      setCloudStatus('保存快照失败: ' + e.message, 'error');
+      alert('保存快照失败: ' + e.message);
+      return;
+    }
+  } else {
+    // Local snapshot
+    const localSnaps = JSON.parse(localStorage.getItem(LOCAL_SNAPSHOTS_KEY) || '[]');
+    localSnaps.push({ name: fileName, data: snapData });
+    localStorage.setItem(LOCAL_SNAPSHOTS_KEY, JSON.stringify(localSnaps));
+    alert('快照已保存至本地: ' + label);
+  }
+
+  await loadSnapshotList();
+  document.getElementById('snapshot-label').value = '';
+}
+
+function parseSnapshotName(fileName) {
+  // Format: {timestamp}_{label}.json
+  const base = fileName.replace(/\.json$/, '');
+  const parts = base.split('_');
+  const tsStr = parts[0] || '';
+  const label = parts.slice(1).join('_') || '(未命名)';
+  let timeDisplay = tsStr;
+  if (tsStr.length === 14) {
+    timeDisplay = tsStr.substring(0,4) + '-' + tsStr.substring(4,6) + '-' + tsStr.substring(6,8) +
+      ' ' + tsStr.substring(8,10) + ':' + tsStr.substring(10,12) + ':' + tsStr.substring(12,14);
+  }
+  return { label, timeDisplay };
+}
+
+async function loadSnapshotList() {
+  const listEl = document.getElementById('snapshot-list');
+
+  if (!cloudEnabled) {
+    // Local snapshots
+    const localSnaps = JSON.parse(localStorage.getItem(LOCAL_SNAPSHOTS_KEY) || '[]');
+    if (localSnaps.length === 0) {
+      listEl.innerHTML = '<div class="empty-hint">暂无本地快照</div>';
+      return;
+    }
+    listEl.innerHTML = localSnaps.sort((a,b) => b.name.localeCompare(a.name)).map(s => {
+      const parsed = parseSnapshotName(s.name);
+      return '<div class="snapshot-item">' +
+        '<div class="snap-info">' +
+        '<div class="snap-label">' + escapeHtml(parsed.label) + '</div>' +
+        '<div class="snap-time">' + parsed.timeDisplay + '</div>' +
+        '</div>' +
+        '<div class="snap-actions">' +
+        '<button class="snap-btn restore" onclick="restoreSnapshotLocal(\'' + s.name.replace(/'/g, "\\'") + '\')">恢复</button>' +
+        '<button class="snap-btn delete" onclick="deleteSnapshotLocal(\'' + s.name.replace(/'/g, "\\'") + '\')">删除</button>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+    return;
+  }
+
+  try {
+    listEl.innerHTML = '<div class="empty-hint">加载中...</div>';
+    const files = await githubListFiles(CLOUD_CONFIG.snapshotsDir);
+    const mySnaps = files
+      .filter(f => f.name.endsWith('.json'))
+      .sort((a, b) => b.name.localeCompare(a.name));
+
+    if (mySnaps.length === 0) {
+      listEl.innerHTML = '<div class="empty-hint">暂无快照</div>';
+      return;
+    }
+
+    listEl.innerHTML = mySnaps.map(f => {
+      const parsed = parseSnapshotName(f.name);
+      return '<div class="snapshot-item">' +
+        '<div class="snap-info">' +
+        '<div class="snap-label">' + escapeHtml(parsed.label) + '</div>' +
+        '<div class="snap-time">' + parsed.timeDisplay + '</div>' +
+        '</div>' +
+        '<div class="snap-actions">' +
+        '<button class="snap-btn restore" onclick="restoreSnapshot(\'' + f.path + '\')">恢复</button>' +
+        '<button class="snap-btn delete" onclick="deleteSnapshot(\'' + f.path + '\',\'' + f.sha + '\',\'' + f.name.replace(/'/g, "\\'") + '\')">删除</button>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+  } catch(e) {
+    listEl.innerHTML = '<div class="empty-hint">加载失败: ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function applySnapshotData(snapData) {
+  cloudLoading = true;
+  const changed = distributeCloudData(snapData);
+  if (changed) {
+    renderAll();
+    // Reload notes table content
+    const saved = localStorage.getItem('portfolio_notes_v2');
+    if (saved) {
+      try {
+        const map = JSON.parse(saved);
+        document.querySelectorAll('[data-notes]').forEach(cell => {
+          const key = cell.getAttribute('data-notes');
+          if (map[key] !== undefined) cell.innerHTML = map[key];
+        });
+      } catch(e) {}
+    }
+  }
+  cloudLoading = false;
+}
+
+async function restoreSnapshot(path) {
+  if (!confirm('恢复快照将覆盖当前数据，确定？')) return;
+  try {
+    setCloudStatus('正在加载快照…', 'loading');
+    const file = await githubGetFile(path);
+    if (file) {
+      const content = JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g, '')))));
+      applySnapshotData(content);
+      setCloudStatus('快照已恢复（需手动保存才会写入主数据）', 'ready');
+      alert('快照已恢复（需手动保存才会写入主数据）');
+    }
+  } catch(e) {
+    setCloudStatus('恢复失败: ' + e.message, 'error');
+    alert('恢复失败: ' + e.message);
+  }
+}
+
+async function deleteSnapshot(path, sha, name) {
+  if (!confirm('删除快照「' + name + '」？')) return;
+  try {
+    await githubDeleteFile(path, sha, 'Portfolio: 删除快照 ' + name);
+    alert('快照已删除');
+    await loadSnapshotList();
+  } catch(e) {
+    alert('删除失败: ' + e.message);
+  }
+}
+
+// Local snapshot restore/delete (no PAT)
+function restoreSnapshotLocal(name) {
+  if (!confirm('恢复快照将覆盖当前数据，确定？')) return;
+  const localSnaps = JSON.parse(localStorage.getItem(LOCAL_SNAPSHOTS_KEY) || '[]');
+  const snap = localSnaps.find(s => s.name === name);
+  if (snap && snap.data) {
+    applySnapshotData(snap.data);
+    alert('快照已恢复（需手动保存才会写入主数据）');
+  } else {
+    alert('快照数据损坏');
+  }
+}
+
+function deleteSnapshotLocal(name) {
+  if (!confirm('删除快照「' + name + '」？')) return;
+  let localSnaps = JSON.parse(localStorage.getItem(LOCAL_SNAPSHOTS_KEY) || '[]');
+  localSnaps = localSnaps.filter(s => s.name !== name);
+  localStorage.setItem(LOCAL_SNAPSHOTS_KEY, JSON.stringify(localSnaps));
+  alert('快照已删除');
+  loadSnapshotList();
 }
 
 // Init cloud sync on page load
