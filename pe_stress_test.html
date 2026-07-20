@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P/E 估值压力测试器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #0f172a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 520px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: #f8fafc;
+            font-size: 24px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .subtitle {
+            color: #94a3b8;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            color: #cbd5e1;
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            background: #0f172a;
+            color: #f8fafc;
+            font-size: 16px;
+            transition: all 0.3s;
+            outline: none;
+        }
+        .input-group input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            background: #3b82f6;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 8px;
+        }
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .result {
+            margin-top: 28px;
+            padding: 24px;
+            background: #0f172a;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            display: none;
+        }
+        .result.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .result-title {
+            color: #f8fafc;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #334155;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #1e293b;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .result-label {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        .result-value {
+            color: #f8fafc;
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .result-value.highlight {
+            color: #f59e0b;
+        }
+        .result-value.danger {
+            color: #ef4444;
+        }
+        .result-value.success {
+            color: #22c55e;
+        }
+        .gauge-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .gauge-label {
+            color: #94a3b8;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        .gauge-bar {
+            height: 8px;
+            background: #334155;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .gauge-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.8s ease, background 0.3s;
+            width: 0;
+        }
+        .gauge-text {
+            margin-top: 8px;
+            color: #cbd5e1;
+            font-size: 13px;
+        }
+        .preset-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .preset-btn {
+            padding: 6px 14px;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            background: #1e293b;
+            color: #94a3b8;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .preset-btn:hover {
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 P/E 估值压力测试器</h1>
+        <p class="subtitle">计算估值回归所需的净利润增长率</p>
+
+        <div class="preset-buttons">
+            <button class="preset-btn" onclick="setPreset(210, 40, 3, -30)">高估值回归</button>
+            <button class="preset-btn" onclick="setPreset(50, 25, 3, 0)">中等估值</button>
+            <button class="preset-btn" onclick="setPreset(25, 15, 5, 10)">低估值增长</button>
+            <button class="preset-btn" onclick="setPreset(100, 30, 3, -50)">极端压力</button>
+        </div>
+
+        <div class="input-row">
+            <div class="input-group">
+                <label>当前 PE</label>
+                <input type="number" id="currentPe" value="210" step="0.1">
+            </div>
+            <div class="input-group">
+                <label>目标 PE</label>
+                <input type="number" id="targetPe" value="40" step="0.1">
+            </div>
+        </div>
+
+        <div class="input-row">
+            <div class="input-group">
+                <label>修复年限</label>
+                <input type="number" id="years" value="3" min="1" max="50">
+            </div>
+            <div class="input-group">
+                <label>股价涨跌幅 (%)</label>
+                <input type="number" id="priceChange" value="-30" step="0.1">
+            </div>
+        </div>
+
+        <button class="btn" onclick="calculate()">🚀 运行压力测试</button>
+
+        <div class="result" id="result">
+            <div class="result-title">📋 压力测试结果</div>
+            <div class="result-item">
+                <span class="result-label">假设股价涨跌幅</span>
+                <span class="result-value" id="resPriceChange">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">净利润需增长倍数</span>
+                <span class="result-value highlight" id="resMultiple">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">所需 CAGR</span>
+                <span class="result-value" id="resCagr">-</span>
+            </div>
+            <div class="gauge-container">
+                <div class="gauge-label">增长难度评估</div>
+                <div class="gauge-bar">
+                    <div class="gauge-fill" id="gaugeFill"></div>
+                </div>
+                <div class="gauge-text" id="gaugeText">-</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setPreset(currentPe, targetPe, years, priceChange) {
+            document.getElementById('currentPe').value = currentPe;
+            document.getElementById('targetPe').value = targetPe;
+            document.getElementById('years').value = years;
+            document.getElementById('priceChange').value = priceChange;
+            calculate();
+        }
+
+        function calculate() {
+            const currentPe = parseFloat(document.getElementById('currentPe').value);
+            const targetPe = parseFloat(document.getElementById('targetPe').value);
+            const years = parseFloat(document.getElementById('years').value);
+            const priceChangePct = parseFloat(document.getElementById('priceChange').value);
+
+            if (!currentPe || !targetPe || !years || currentPe <= 0 || targetPe <= 0 || years <= 0) {
+                alert('请输入有效的正数值');
+                return;
+            }
+
+            const pChange = priceChangePct / 100.0;
+            const profitMultiple = (1 + pChange) * (currentPe / targetPe);
+            const cagr = (profitMultiple ** (1 / years)) - 1;
+            const cagrPct = cagr * 100;
+
+            // 显示结果
+            document.getElementById('resPriceChange').textContent = 
+                (priceChangePct >= 0 ? '+' : '') + priceChangePct.toFixed(1) + '%';
+            document.getElementById('resPriceChange').className = 
+                'result-value ' + (priceChangePct >= 0 ? 'success' : 'danger');
+
+            document.getElementById('resMultiple').textContent = profitMultiple.toFixed(2) + 'x';
+
+            const cagrElem = document.getElementById('resCagr');
+            cagrElem.textContent = cagrPct.toFixed(2) + '%';
+            if (cagrPct > 30) cagrElem.className = 'result-value danger';
+            else if (cagrPct > 15) cagrElem.className = 'result-value highlight';
+            else if (cagrPct > 0) cagrElem.className = 'result-value success';
+            else cagrElem.className = 'result-value';
+
+            // 难度评估
+            let difficulty, gaugeWidth, gaugeColor, text;
+            const absCagr = Math.abs(cagrPct);
+
+            if (absCagr <= 0) {
+                difficulty = 0;
+                gaugeColor = '#22c55e';
+                text = '✅ 无需增长，估值已合理';
+            } else if (absCagr <= 10) {
+                difficulty = 20;
+                gaugeColor = '#22c55e';
+                text = '🟢 较易实现（普通成长股水平）';
+            } else if (absCagr <= 20) {
+                difficulty = 40;
+                gaugeColor = '#84cc16';
+                text = '🟡 有一定难度（优质成长股水平）';
+            } else if (absCagr <= 30) {
+                difficulty = 60;
+                gaugeColor = '#f59e0b';
+                text = '🟠 难度较高（顶级成长股水平）';
+            } else if (absCagr <= 50) {
+                difficulty = 80;
+                gaugeColor = '#ef4444';
+                text = '🔴 非常困难（极少数公司能达到）';
+            } else {
+                difficulty = 100;
+                gaugeColor = '#dc2626';
+                text = '⚠️ 几乎不可能（需要奇迹式增长）';
+            }
+
+            const gaugeFill = document.getElementById('gaugeFill');
+            gaugeFill.style.width = difficulty + '%';
+            gaugeFill.style.background = gaugeColor;
+            document.getElementById('gaugeText').textContent = text;
+            document.getElementById('gaugeText').style.color = gaugeColor;
+
+            document.getElementById('result').classList.add('show');
+        }
+
+        // 回车触发计算
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') calculate();
+            });
+        });
+
+        // 页面加载时自动计算一次
+        window.onload = calculate;
+    </script>
+</body>
+</html>
