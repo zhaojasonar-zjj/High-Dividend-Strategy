@@ -596,7 +596,7 @@
   <div class="cover-section">
     <h2>四、决策规则</h2>
     <table>
-      <tr><td>隐含回报率</td><td>E(R) = Σ(后验概率_i × 单情景隐含回报率_i)，单情景 ≈ D₁/P₀ + g₂</td></tr>
+      <tr><td>隐含回报率</td><td>E(R) = Σ(后验概率_i × IRR_i)，IRR为令V₀=P₀成立的折现率（二分法求解）</td></tr>
       <tr><td>买入门槛</td><td>Hurdle Rate = 资金成本(如房贷/理财) + 风险补偿(2%)</td></tr>
       <tr><td>决策规则</td><td>E(R) &gt; 买入门槛 → 坚定买入; 否则观望或减仓</td></tr>
     </table>
@@ -631,7 +631,7 @@
   <div class="model-section">
     <div class="section-header">核心预测引擎：EPS拆解 + 两阶段DDM绝对估值</div>
 
-    <div class="sub-header">▎一、基本参数（黄色=手动输入）</div>
+    <div class="sub-header">▎✍️ 一、基本参数（黄色=手动输入）</div>
     <div class="section-body">
       <div class="param-grid">
         <div class="param-item"><label>股票名称</label><span class="display-value" id="stockNameDisplay">—</span></div>
@@ -645,7 +645,7 @@
       </div>
     </div>
 
-    <div class="sub-header">▎二、三情景预测表：前5年EPS与派息率 → 股息推导 → 两阶段DDM估值</div>
+    <div class="sub-header">▎✍️ 二、三情景预测表：前5年EPS与派息率 → 股息推导 → 🧮两阶段DDM估值</div>
     <div class="section-body" style="overflow-x:auto;">
       <table class="data-table" id="engineTable">
         <thead>
@@ -669,7 +669,7 @@
   <div class="model-section">
     <div class="section-header">贝叶斯似然比矩阵：预先判定标准 + 后验概率自动计算</div>
 
-    <div class="sub-header">▎一、预先判定标准（铁律: 在看财报前必须写好! 防止事后合理化）</div>
+    <div class="sub-header">▎✍️ 一、预先判定标准（铁律: 在看财报前必须写好! 防止事后合理化）</div>
     <div class="section-body">
       <div class="warning-box">⚠️ 投资纪律: 标准一旦写定, 财报公布后必须严格对照执行, 不得临时修改!</div>
       <table class="data-table judgment-table">
@@ -688,7 +688,7 @@
       </table>
     </div>
 
-    <div class="sub-header">▎二、似然比赋值区（财报后, 对照标准在黄色区填入L值）</div>
+    <div class="sub-header">▎✍️ 二、似然比赋值区（财报后, 对照标准在黄色区填入L值）→ 🧮后验概率自动计算</div>
     <div class="section-body">
       <div class="param-grid" style="margin-bottom:16px;">
         <div class="param-item"><label>实际Y1 EPS₁ (元)</label><input type="number" id="actualEPS1" value="0.92" step="0.01"></div>
@@ -715,19 +715,19 @@
   <div class="model-section">
     <div class="section-header">隐含回报率与决策输出</div>
 
-    <div class="sub-header">▎一、各情景隐含回报率 (自动引用上方数据)</div>
+    <div class="sub-header">▎🧮 一、各情景隐含回报率 (自动引用上方数据)</div>
     <div class="section-body" style="overflow-x:auto;">
       <table class="data-table" id="returnTable">
         <thead>
           <tr>
-            <th>情景</th><th>后验概率</th><th>Y1股息D₁</th><th>当前股息率 =D₁/P₀</th><th>g₂</th><th>隐含回报率 ≈D₁/P₀+g₂</th>
+            <th>情景</th><th>后验概率</th><th>Y1股息D₁</th><th>当前股息率 =D₁/P₀</th><th>g₂</th><th>隐含回报率 IRR</th>
           </tr>
         </thead>
         <tbody id="returnBody"></tbody>
       </table>
     </div>
 
-    <div class="sub-header">▎二、加权隐含回报率与最终决策</div>
+    <div class="sub-header">▎✅ 二、加权隐含回报率与最终决策</div>
     <div class="section-body">
       <div class="summary-row">
         <span class="label">加权隐含年化回报率 E(R)</span>
@@ -744,12 +744,12 @@
       <div class="decision-box" id="finalDecision">—</div>
     </div>
 
-    <div class="sub-header">▎三、辅助: 各情景DDM绝对价值 vs 当前股价</div>
+    <div class="sub-header">▎🧮 三、辅助: 各情景DDM绝对价值 vs 当前股价</div>
     <div class="section-body" style="overflow-x:auto;">
       <table class="data-table" id="ddmTable">
         <thead>
           <tr>
-            <th>情景</th><th>DDM价值V₀</th><th>当前股价P₀</th><th>安全边际 =(V₀-P₀)/P₀</th><th>后验概率</th><th>加权V₀ =V₀×后验</th>
+            <th>情景</th><th>DDM价值V₀</th><th>当前股价P₀</th><th>安全边际 =(V₀-P₀)/V₀</th><th>后验概率</th><th>加权V₀ =V₀×后验</th>
           </tr>
         </thead>
         <tbody id="ddmBody"></tbody>
@@ -1730,7 +1730,7 @@ function readEngineInputs() {
       scenarios[si][field] = val;
     }
   });
-  calculateAll();
+  debouncedCalculateAll();
 }
 
 function buildBayesTable() {
@@ -1779,7 +1779,7 @@ function readBayesInputs() {
     }
   });
   updateJudgmentHint();
-  calculateAll();
+  debouncedCalculateAll();
 }
 
 function updateJudgmentHint() {
@@ -1843,6 +1843,54 @@ function buildDdmTable() {
 // ============================================================
 //  MAIN CALCULATION
 // ============================================================
+
+/**
+ * Solve IRR (internal rate of return) for two-stage DDM:
+ *   P0 = Σ Dₜ/(1+r)ᵗ  (t=1..5) + D₆/((r-g₂)(1+r)⁵)
+ * Uses bisection: finds r* such that NPV(r*) = 0.
+ * Returns NaN if no valid root exists (e.g. r ≤ g2 or P0 ≤ 0).
+ */
+function solveDDM_IRR(divs, g2, P0) {
+  if (P0 <= 0) return NaN;
+  // r must be > g2 for convergence; search in (g2, 1.0)
+  const lo = g2 + 1e-6;
+  const hi = 1.0;  // 100%
+  const maxIter = 100;
+  const tol = 1e-7;
+
+  const npv = (r) => {
+    let sum = 0;
+    for (let i = 0; i < 5; i++) {
+      sum += divs[i] / Math.pow(1 + r, i + 1);
+    }
+    const d6 = divs[4] * (1 + g2);
+    const p5 = d6 / (r - g2);
+    sum += p5 / Math.pow(1 + r, 5);
+    return sum - P0;
+  };
+
+  let loVal = npv(lo);
+  let hiVal = npv(hi);
+
+  // If both ends have same sign, no root in range
+  if (loVal * hiVal > 0) return NaN;
+
+  let mid = (lo + hi) / 2;
+  for (let i = 0; i < maxIter; i++) {
+    mid = (lo + hi) / 2;
+    const midVal = npv(mid);
+    if (Math.abs(midVal) < tol) break;
+    if (loVal * midVal < 0) {
+      hi = mid;
+      hiVal = midVal;
+    } else {
+      lo = mid;
+      loVal = midVal;
+    }
+  }
+  return mid;
+}
+
 function calculateAll() {
   const P0 = num('P0');
   const costRate = num('costRate');
@@ -1864,7 +1912,19 @@ function calculateAll() {
     }
     const d6 = divs[4] * (1 + s.g2);
     document.getElementById(`d6_${si}`).textContent = fmt(d6, 4);
-    const p5 = (s.r - s.g2) !== 0 ? d6 / (s.r - s.g2) : 0;
+
+    // Guard: r must be strictly greater than g2 for Gordon model convergence
+    if (s.r <= s.g2) {
+      document.getElementById(`p5_${si}`).textContent = '⚠️ r≤g₂';
+      document.getElementById(`pv5_${si}`).textContent = '—';
+      document.getElementById(`pvSum_${si}`).textContent = '—';
+      document.getElementById(`v0_${si}`).textContent = '—';
+      v0s.push(NaN);
+      d1s.push(divs[0]);
+      return;
+    }
+
+    const p5 = d6 / (s.r - s.g2);
     document.getElementById(`p5_${si}`).textContent = fmt(p5, 4);
     const pv5 = p5 / Math.pow(1 + s.r, 5);
     document.getElementById(`pv5_${si}`).textContent = fmt(pv5, 4);
@@ -1902,18 +1962,41 @@ function calculateAll() {
   document.getElementById('weightedSum').textContent = fmt(weightedSum, 4);
   document.getElementById('posteriorSum').textContent = fmtPct(posteriors.reduce((a,b)=>a+b, 0), 2);
 
-  // === Return calculations ===
+  // === Return calculations (IRR-based) ===
   let weightedReturn = 0;
   scenarios.forEach((s, si) => {
     const d1 = d1s[si];
     const yield_ = P0 !== 0 ? d1 / P0 : 0;
-    const totalReturn = yield_ + s.g2;
+
+    // Compute scenario dividends for IRR
+    const divs = [];
+    for (let i = 0; i < 5; i++) {
+      divs.push(s.eps[i] * s.payout[i]);
+    }
+
+    // IRR: the true implicit return rate where V0 = P0
+    let irr;
+    if (s.r > s.g2 && P0 > 0) {
+      irr = solveDDM_IRR(divs, s.g2, P0);
+      if (isNaN(irr)) irr = yield_ + s.g2;  // fallback to approximation
+    } else {
+      irr = NaN;  // invalid scenario
+    }
+
+    const totalReturn = isNaN(irr) ? 0 : irr;
     weightedReturn += posteriors[si] * totalReturn;
+
     document.getElementById(`ret_post_${si}`).textContent = fmtPct(posteriors[si], 2);
     document.getElementById(`ret_d1_${si}`).textContent = fmt(d1, 3);
     document.getElementById(`ret_yield_${si}`).textContent = fmtPct(yield_, 3);
     document.getElementById(`ret_g2_${si}`).textContent = fmtPct(s.g2, 1);
-    document.getElementById(`ret_total_${si}`).textContent = fmtPct(totalReturn, 3);
+    const irrCell = document.getElementById(`ret_total_${si}`);
+    irrCell.textContent = isNaN(irr) ? '—' : fmtPct(irr, 3);
+    if (!isNaN(irr) && irr > hurdle) {
+      irrCell.style.color = '#006100';
+    } else if (!isNaN(irr)) {
+      irrCell.style.color = '#9C0006';
+    }
   });
 
   // === Decision summary ===
@@ -1935,7 +2018,7 @@ function calculateAll() {
   let weightedV0 = 0;
   scenarios.forEach((s, si) => {
     const v0 = v0s[si];
-    const margin = P0 !== 0 ? (v0 - P0) / P0 : 0;
+    const margin = v0 !== 0 ? (v0 - P0) / v0 : 0;
     const wv0 = v0 * posteriors[si];
     weightedV0 += wv0;
     document.getElementById(`ddm_v0_${si}`).textContent = fmt(v0, 2);
@@ -1963,6 +2046,16 @@ function calculateAll() {
   scheduleAutoSave();
 }
 
+// Debounced version for input events (200ms) to avoid excessive recalculation
+let calcTimer = null;
+function debouncedCalculateAll() {
+  if (calcTimer) clearTimeout(calcTimer);
+  calcTimer = setTimeout(() => {
+    calcTimer = null;
+    calculateAll();
+  }, 200);
+}
+
 // ============================================================
 //  INITIALIZATION
 // ============================================================
@@ -1984,7 +2077,7 @@ calculateAll();
 
 // Listen to global param changes
 ['P0','costRate','riskPremium','actualEPS1','actualPayout1'].forEach(id => {
-  document.getElementById(id).addEventListener('input', calculateAll);
+  document.getElementById(id).addEventListener('input', debouncedCalculateAll);
 });
 
 // Initialize cloud sync
