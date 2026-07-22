@@ -1853,8 +1853,8 @@ function buildDdmTable() {
 function solveDDM_IRR(divs, g2, P0) {
   if (P0 <= 0) return NaN;
   // r must be > g2 for convergence; search in (g2, 1.0)
-  const lo = g2 + 1e-6;
-  const hi = 1.0;  // 100%
+  let lo = g2 + 1e-6;
+  let hi = 1.0;  // 100%
   const maxIter = 100;
   const tol = 1e-7;
 
