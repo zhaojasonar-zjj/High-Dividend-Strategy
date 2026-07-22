@@ -1096,7 +1096,8 @@ function serializeState() {
 }
 
 function deserializeState(data) {
-  cloudLoading = true;
+  // Note: caller is responsible for managing cloudLoading/dataLoaded flags.
+  // This function only handles data loading + UI refresh.
 
   // Set params
   const p = data.params || {};
@@ -1135,8 +1136,6 @@ function deserializeState(data) {
   // Recalculate
   updateJudgmentHint();
   calculateAll();
-
-  cloudLoading = false;
 }
 
 // ============================================================
@@ -1220,6 +1219,7 @@ async function loadStock(name) {
     setSyncStatus('loading');
     const path = `${GITHUB.stocksDir}/${name}.json`;
     const file = await githubGet(path);
+    cloudLoading = true;  // Suppress auto-save during deserializeState
     if (file) {
       const data = JSON.parse(base64ToUtf8(file.content));
       cloudSha = file.sha;
@@ -1245,6 +1245,8 @@ async function loadStock(name) {
 }
 
 function loadStockFromLocal() {
+  cloudSha = null;  // Clear cloud SHA when loading from local
+  cloudLoading = true;  // Suppress auto-save during deserializeState
   const local = JSON.parse(localStorage.getItem(LOCAL_DATA_KEY) || '{}');
   const data = local[currentStockName];
   if (data) {
@@ -1408,6 +1410,8 @@ async function saveNow() {
     clearTimeout(saveTimer);
     saveTimer = null;
   }
+  // Release cloudLoading lock (e.g. after snapshot restore) so auto-save resumes
+  cloudLoading = false;
   await saveCurrentStock();
   if (hasPat()) showToast('已同步到云端', 'success');
   else showToast('已保存到本地', 'info');
@@ -1426,11 +1430,15 @@ async function resolveConflict(choice) {
       if (file) {
         const data = JSON.parse(base64ToUtf8(file.content));
         cloudSha = file.sha;
+        cloudLoading = true;  // Suppress auto-save during deserializeState
         deserializeState(data);
+        dataLoaded = true;
+        cloudLoading = false;
         setSyncStatus('synced');
         showToast('已加载远端数据', 'success');
       }
     } catch (e) {
+      cloudLoading = false;  // Release lock on error
       showToast('加载远端数据失败: ' + e.message, 'error');
       setSyncStatus('error');
     }
@@ -1590,11 +1598,15 @@ async function restoreSnapshot(path) {
     if (file) {
       const data = JSON.parse(base64ToUtf8(file.content));
       // Don't change currentStockName, just load data
+      cloudLoading = true;  // Suppress auto-save during deserializeState
       deserializeState(data);
+      // Keep cloudLoading=true after snapshot restore: user must manually save
+      // to prevent auto-save from overwriting main data before user confirms.
       setSyncStatus('synced');
       showToast('快照已恢复（需手动保存才会写入主数据）', 'success');
     }
   } catch (e) {
+    cloudLoading = false;  // Release lock on error
     showToast('恢复失败: ' + e.message, 'error');
     setSyncStatus('error');
   }
@@ -1618,7 +1630,9 @@ function restoreSnapshotLocal(name) {
   const localSnaps = JSON.parse(localStorage.getItem('ddm_local_snapshots') || '[]');
   const snap = localSnaps.find(s => s.name === name);
   if (snap && snap.data) {
+    cloudLoading = true;  // Suppress auto-save during and after restore
     deserializeState(snap.data);
+    // Keep cloudLoading=true: user must manually save to write main data
     showToast('快照已恢复（需手动保存才会写入主数据）', 'success');
   } else {
     showToast('快照数据损坏', 'error');
@@ -1946,9 +1960,7 @@ function calculateAll() {
   }
 
   // Schedule auto-save after calculation
-  if (!cloudLoading) {
-    scheduleAutoSave();
-  }
+  scheduleAutoSave();
 }
 
 // ============================================================
