@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="支持相关矩阵修复、随机种子、跳跃扩散、买入持有与每日再平衡的多资产组合蒙特卡洛仿真系统。">
+    <title>多资产股票组合蒙特卡洛量化仿真系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous" defer></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+    <header class="hero">
+        <div>
+            <p class="eyebrow">Monte Carlo Portfolio Risk Lab</p>
+            <h1>多资产股票组合蒙特卡洛量化仿真系统</h1>
+            <p class="hero-text">基于相关性 GBM、Student-t 肥尾噪声、Merton 跳跃扩散及组合模型，内置方差归一化与漂移补偿双校准、对偶变差方差缩减，支持可复现实验、半正定相关矩阵修复、双持有口径及尾部风险指标。</p>
+        </div>
+        <div class="hero-badges" aria-label="系统能力">
+            <span>可复现种子</span>
+            <span>异步计算</span>
+            <span>VaR / CVaR</span>
+        </div>
+    </header>
+
+    <main class="grid-layout">
+        <aside class="sidebar" aria-label="仿真参数配置">
+            <section class="card">
+                <div class="card-title">
+                    <span>1. 全局配置</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="modelChoice">资产价格模型</label>
+                    <select id="modelChoice" class="form-control">
+                        <option value="GBM">几何布朗运动（GBM，正态噪声）</option>
+                        <option value="STUDENT_T">Student-t GBM（肥尾噪声）</option>
+                        <option value="JUMP">Merton 跳跃扩散（含突发冲击）</option>
+                        <option value="STUDENT_T_JUMP">Student-t + 跳跃扩散（肥尾 + 跳空）</option>
+                    </select>
+                    <small>GBM 假设对数收益正态；Student-t 增强连续肥尾风险；Merton 额外刻画不连续跳空；组合模型同时启用两种校准。</small>
+                </div>
+
+                <div id="studentParamsGroup" class="student-panel" hidden>
+                    <p class="panel-heading">Student-t 肥尾参数</p>
+                    <div class="form-group">
+                        <label for="studentDf">自由度 ν</label>
+                        <input type="number" id="studentDf" class="form-control" value="5" min="2.1" max="100" step="0.1">
+                        <small>ν 必须大于 2；噪声方差已标准化为 1，ν 主要控制峰度和尾部厚度，大于 30 时接近正态 GBM。</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="holdingMode">组合权重口径</label>
+                    <select id="holdingMode" class="form-control">
+                        <option value="buyHold">买入并持有：份额固定，权重自然漂移</option>
+                        <option value="dailyRebalance">每日再平衡：每日恢复目标权重</option>
+                    </select>
+                    <small>买入持有不交易；每日再平衡会每天恢复目标权重，但不计交易成本和税费。</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="simDays">模拟交易日</label>
+                        <input type="number" id="simDays" class="form-control" value="252" min="5" max="1000" step="1">
+                        <small>模拟期限，252 个交易日约等于 1 年。</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="simPaths">模拟路径数</label>
+                        <input type="number" id="simPaths" class="form-control" value="2000" min="100" max="10000" step="100">
+                        <small>路径越多统计误差越小，但计算时间越长。</small>
+                    </div>
+                </div>
+
+                <div class="form-group seed-group">
+                    <label for="randomSeed">随机种子（留空则随机）</label>
+                    <div class="input-action">
+                        <input type="number" id="randomSeed" class="form-control" value="20260721" min="0" step="1">
+                        <button type="button" id="randomSeedBtn" class="btn btn-ghost">换一个</button>
+                    </div>
+                    <small>控制随机数序列；相同参数与种子可完全复现结果，留空则每次随机。</small>
+                </div>
+
+                <div id="jumpParamsGroup" class="jump-panel" hidden>
+                    <p class="panel-heading">Merton 跳跃参数</p>
+                    <div class="form-row three-cols">
+                        <div class="form-group">
+                            <label for="jumpLambda">年化跳跃频率 λ</label>
+                            <input type="number" id="jumpLambda" class="form-control" value="1.5" min="0" max="50" step="0.1">
+                            <small>平均每一年发生跳跃的次数，越大跳空越频繁。</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="jumpMu">平均对数跳跃 μ<sub>J</sub></label>
+                            <input type="number" id="jumpMu" class="form-control" value="-0.05" step="0.01">
+                            <small>跳跃方向的中心；−0.05 大致对应平均下跌约 4.9%。</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="jumpSigma">跳跃波动 σ<sub>J</sub></label>
+                            <input type="number" id="jumpSigma" class="form-control" value="0.10" min="0" max="2" step="0.01">
+                            <small>单次跳跃幅度的不确定性，越大跳跃分布越分散。</small>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="jumpCorrelation">系统性跳跃占比（0 至 1）</label>
+                        <input type="number" id="jumpCorrelation" class="form-control" value="0.40" min="0" max="1" step="0.05">
+                        <small>控制市场共同冲击比例；0 表示各资产跳跃独立，1 表示所有资产同时承受同一次冲击。</small>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-title">
+                    <span>2. 资产配置</span>
+                    <div class="title-actions">
+                        <button type="button" id="normalizeWeightsBtn" class="btn btn-ghost">权重归一</button>
+                        <button type="button" id="addAssetBtn" class="btn btn-secondary">添加资产</button>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table id="assetsTable" class="assets-table">
+                        <thead>
+                        <tr>
+                            <th>资产名称</th>
+                            <th>初始价</th>
+                            <th>权重 %</th>
+                            <th>预期年收益 %</th>
+                            <th>年化波动 %</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <p id="weightStatus" class="status-text" role="status"></p>
+            </section>
+
+            <section class="card">
+                <div class="card-title">
+                    <span>3. 相关系数矩阵</span>
+                    <button type="button" id="resetMatrixBtn" class="btn btn-ghost">恢复默认</button>
+                </div>
+                <p class="help-text">输入 −1 至 1 的两两相关系数。运行时系统会校验半正定性；轻微矛盾会自动投影到最近的有效相关矩阵。</p>
+                <div id="matrixContainer" class="matrix-wrap"></div>
+                <p class="help-text">每个非对角单元格表示对应两项资产的收益率相关系数；正值偏同向，负值偏对冲，0 表示线性无关。</p>
+                <p id="matrixStatus" class="status-text" role="status"></p>
+            </section>
+
+            <div class="run-panel">
+                <button type="button" id="runBtn" class="btn btn-primary run-btn">开始蒙特卡洛仿真</button>
+                <button type="button" id="cancelBtn" class="btn btn-secondary" disabled>取消</button>
+                <div class="progress-wrap" aria-label="仿真进度">
+                    <div id="progressBar" class="progress-bar"></div>
+                </div>
+                <p id="runStatus" class="status-text" role="status"></p>
+            </div>
+        </aside>
+
+        <section class="main-content" aria-label="仿真结果">
+            <section class="card">
+                <div class="card-title">
+                    <span>4. 组合风险指标</span>
+                    <button type="button" id="exportCsvBtn" class="btn btn-ghost" disabled>导出路径结果 CSV</button>
+                </div>
+                <div class="metrics-grid">
+                    <article class="metric-card">
+                        <span class="metric-label">期末净值均值</span>
+                        <strong class="metric-value" id="mExpectedNav">--</strong>
+                    </article>
+                    <article class="metric-card success">
+                        <span class="metric-label">期望累计收益率</span>
+                        <strong class="metric-value" id="mExpectedReturn">--</strong>
+                    </article>
+                    <article class="metric-card">
+                        <span class="metric-label">期末净值中位数</span>
+                        <strong class="metric-value" id="mMedianNav">--</strong>
+                    </article>
+                    <article class="metric-card">
+                        <span class="metric-label">期末净值标准差</span>
+                        <strong class="metric-value" id="mNavStd">--</strong>
+                    </article>
+                    <article class="metric-card danger">
+                        <span class="metric-label">亏损概率</span>
+                        <strong class="metric-value" id="mProbLoss">--</strong>
+                    </article>
+                    <article class="metric-card danger">
+                        <span class="metric-label">平均最大回撤</span>
+                        <strong class="metric-value" id="mMeanMaxDD">--</strong>
+                    </article>
+                    <article class="metric-card danger">
+                        <span class="metric-label">95% VaR / CVaR</span>
+                        <strong class="metric-value split" id="mRisk95">--</strong>
+                    </article>
+                    <article class="metric-card danger">
+                        <span class="metric-label">99% VaR / CVaR</span>
+                        <strong class="metric-value split" id="mRisk99">--</strong>
+                    </article>
+                </div>
+                <div id="calibrationPanel" class="calibration-panel" hidden>
+                    <div class="calibration-title">模型校准参数</div>
+                    <div id="calibrationContent" class="calibration-content"></div>
+                </div>
+                <p id="resultSummary" class="result-summary">完成参数配置后点击"开始蒙特卡洛仿真"。</p>
+            </section>
+
+            <section class="card">
+                <div class="card-title">
+                    <span>5. 图表分析</span>
+                </div>
+                <div class="charts-container">
+                    <article>
+                        <h2 class="chart-title">组合净值路径（抽样前 50 条）</h2>
+                        <div class="chart-box">
+                            <canvas id="pathsChart" aria-label="组合净值模拟路径图"></canvas>
+                        </div>
+                    </article>
+                    <article>
+                        <h2 class="chart-title">期末净值分布</h2>
+                        <div class="chart-box">
+                            <canvas id="distChart" aria-label="期末组合净值分布直方图"></canvas>
+                        </div>
+                    </article>
+                </div>
+                <p id="chartStatus" class="status-text"></p>
+            </section>
+
+            <section class="card docs-card">
+                <div class="card-title">
+                    <span>6. 模型说明、口径与本版修复</span>
+                </div>
+                <div class="instructions">
+                    <h2>数学模型</h2>
+                    <p><strong>几何布朗运动：</strong></p>
+                    <div class="formula">S(t+Δt) = S(t) × exp[(μ − σ²/2)Δt + σ√Δt · X]</div>
+                    <p>其中 μ 是年化期望收益率，σ 是年化波动率，X 是经由相关矩阵 Cholesky 分解得到的相关标准正态变量。</p>
+
+                    <p><strong>Student-t GBM（肥尾噪声模型）：</strong></p>
+                    <div class="formula">S(t+Δt) = S(t) × exp[(μ − σ²/2)Δt + σ√Δt · Tν]</div>
+                    <div class="formula">Tν = [X / √(V/ν)] × √[(ν−2)/ν]，V ~ χ²(ν)</div>
+                    <p>ν 是 Student-t 自由度。系统采用多元 Student-t：共同卡方分母使资产在极端行情下也会出现尾部联动；噪声已标准化为方差 1，并在工程上截断至 ±10 个标准差，避免指数变换产生数值溢出。ν 越小尾部越厚，极端单日冲击、最差路径和深尾部风险通常越突出，但具体 VaR/CVaR 还会受到 σ、期限及中心峰度影响；ν 大于 30 时结果接近正态 GBM。由于 Student-t 指数收益的严格理论均值不适合用正态 GBM 的闭式公式解释，此处的 μ 应理解为年化漂移或近似目标收益参数。</p>
+
+                    <p><strong>Merton 跳跃扩散：</strong></p>
+                    <div class="formula">S(t+Δt) = S(t) × exp[(μ − σ²/2 − λκ)Δt + σ√Δt · X + ΣJ]</div>
+                    <div class="formula">κ = exp(μJ + σJ²/2) − 1，μdrift = μ − λκ</div>
+                    <p>跳跃次数服从泊松分布，单次对数跳跃服从正态分布。补偿项 −λκ 用于避免“引入跳跃”本身额外抬高或压低期望收益。系统性跳跃占比用于刻画市场共同冲击；这是比“所有资产跳跃完全独立”更现实的近似，但仍不是完整的跳跃相关结构模型。</p>
+
+                    <p><strong>Student-t + 跳跃扩散（组合模型）：</strong></p>
+                    <div class="formula">S(t+Δt) = S(t) × exp[(μ − σ²/2 − λκ)Δt + σ√Δt · Zν + ΣJ]</div>
+                    <p>同时启用 Student-t 肥尾噪声（方差归一化 Zν）与 Merton 跳跃漂移补偿（−λκ）。两种校准独立运作：Student-t 缩放因子 √((ν−2)/ν) 确保扩散项冲击具备单位方差，使 σ 保持 GBM 中的金融含义；跳跃补偿 κ = exp(μJ + σJ²/2) − 1 修正漂移，确保引入跳跃后期望收益不发生无意识偏离。适用于既需刻画连续肥尾联动、又需刻画不连续跳空的复合尾部风险场景。</p>
+
+                    <h2>组合口径</h2>
+                    <ul>
+                        <li><strong>买入并持有：</strong>初始按目标权重买入固定份额，之后不再交易，资产权重会随价格涨跌自然漂移。</li>
+                        <li><strong>每日再平衡：</strong>每个交易日收盘后将组合恢复至目标权重。该口径不含交易成本、税费与冲击成本。</li>
+                        <li>系统把初始组合净值统一设为 100。初始价格用于确定持有份额；在归一化展示下，价格本身的比例尺不影响净值结果。</li>
+                    </ul>
+
+                    <h2>风险指标定义</h2>
+                    <ul>
+                        <li><strong>VaR：</strong>按期末净值下分位数计算的本金损失，并截断为不小于 0。例如 95% VaR = 12%，表示约 5% 的路径期末损失超过 12%。</li>
+                        <li><strong>CVaR / ES：</strong>低于相应 VaR 分位点的尾部路径平均损失，用于衡量“跌破阈值后平均亏多少”。</li>
+                        <li><strong>最大回撤：</strong>每条路径从历史峰值到后续低点的最大跌幅；面板展示所有路径的平均最大回撤。</li>
+                    </ul>
+
+                    <h2>本版关键修复</h2>
+                    <ol>
+                        <li>新增 Student-t 肥尾噪声模型，并在全部模型参数输入框下方补充含义、取值范围和影响说明。</li>
+                        <li>将“期末净值”和“收益率”分开展示，修正原版把 109.5 的净值直接标成 109.5% 收益的歧义。</li>
+                        <li>VaR/CVaR 改为标准损失口径并限制为非负，避免分位点盈利时出现负风险值。</li>
+                        <li>新增可复现随机种子；原版 <code>Math.random()</code> 每次不可复现，不利于审计和回归测试。</li>
+                        <li>新增半正定检查与最近相关矩阵投影，解决原版“说明允许半正定、代码却只接受正定”的矛盾。</li>
+                        <li>资产表格改为安全 DOM 构建，消除资产名称注入 HTML 的 XSS 风险。</li>
+                        <li>仿真迁移到 Web Worker，并加入进度与取消，避免大规模计算冻结浏览器主线程。</li>
+                        <li>增加输入校验、退化直方图处理、权重归一化和结果 CSV 导出。</li>
+                        <li>新增 Student-t + 跳跃扩散组合模型，同时启用方差归一化与漂移补偿双校准。</li>
+                        <li>新增模型校准参数面板，实时显示 ν、归一化因子、κ、λκ 及各资产有效漂移 μ_eff。</li>
+                        <li>引入对偶变差（Antithetic Variates）方差缩减技术，相同路径数下均值估计精度翻倍。</li>
+                        <li>增加 NaN/Infinity 防护：极端参数下 <code>exp()</code> 钳制与 <code>calculateMetrics</code> 非有限值过滤，避免 UI 显示 NaN。</li>
+                        <li>修复 Worker Blob URL 内存泄漏：正常完成后释放 <code>objectURL</code>。</li>
+                        <li>Chart.js CDN 添加 SRI 完整性校验，防止 CDN 篡改风险。</li>
+                    </ol>
+
+                    <h2>重要局限</h2>
+                    <ul>
+                        <li>模型未包含股息、做空约束、融资利率、交易成本、税费、流动性冲击和保证金规则。</li>
+                        <li>GBM 的收益率分布偏薄；Student-t 能刻画连续肥尾，Merton 跳跃能产生峰度与不连续路径，但二者都不能替代基于历史数据的压力测试。</li>
+                        <li>预期收益、波动率和相关系数均由用户主观输入，输出对参数高度敏感；不应把模拟结果视为收益承诺或唯一投资依据。</li>
+                    </ul>
+                </div>
+            </section>
+        </section>
+    </main>
+</div>
+
+<noscript>本系统需要启用 JavaScript 才能运行。</noscript>
+<script src="simulation-core.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>
