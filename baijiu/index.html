@@ -97,8 +97,8 @@
 
   /* Column widths */
   col.col-level   { width: 7%; }
-  col.col-indicator { width: 16%; }
-  col.col-data    { width: 19%; }
+  col.col-indicator { width: 19%; }
+  col.col-data    { width: 16%; }
   col.col-threshold { width: 10%; }
   col.col-assess  { width: 21%; }
   col.col-signal  { width: 8%; }
@@ -196,6 +196,8 @@
   .cell-threshold { background: var(--c-threshold-yellow); }
   .cell-assess  { background: var(--c-assess-green); }
   .cell-signal  { background: var(--c-signal-yellow); }
+  .signal-cell { cursor: pointer; outline: none; }
+  .signal-cell:focus { box-shadow: 0 0 0 2px #BA7517 inset; }
   .cell-op      { background: var(--c-op-blue); }
 
   /* === Summary Section (separate from main table) === */
@@ -553,6 +555,21 @@
     background: var(--c-border);
     margin: 0 4px;
   }
+
+  /* === Mobile responsive === */
+  @media (max-width: 900px) {
+    .summary-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .toolbar {
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .cloud-bar {
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -614,268 +631,268 @@
 
   <!-- ===== 宏观层 (rows 6-10) ===== -->
   <tr>
-    <td rowspan="5" class="section-label yellow" contenteditable="true">宏观层</td>
-    <td class="indicator-cell" contenteditable="true">楼市房价（财富效应）</td>
+    <td rowspan="5" class="section-label yellow" contenteditable="true" data-ce-key="ce_0">宏观层</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_1">楼市房价（财富效应）</td>
     <td class="editable cell-data"><input type="text" data-key="macro_1_data" placeholder="—"></td>
     <td class="editable cell-threshold"><input type="text" data-key="macro_1_thresh" placeholder="—"></td>
     <td class="editable cell-assess"><textarea data-key="macro_1_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="macro_1_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="signal-cell" data-key="macro_1_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-gray">未设置</span></td>
     <td class="editable cell-op"><textarea data-key="macro_1_op" rows="1" placeholder="—"></textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">白酒监管政策（政策红线）</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_2">白酒监管政策（政策红线）</td>
     <td class="editable cell-data"><input type="text" data-key="macro_2_data" placeholder="—"></td>
     <td class="editable cell-threshold"><input type="text" data-key="macro_2_thresh" placeholder="—"></td>
     <td class="editable cell-assess"><textarea data-key="macro_2_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="macro_2_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="signal-cell" data-key="macro_2_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-gray">未设置</span></td>
     <td class="editable cell-op"><textarea data-key="macro_2_op" rows="1" placeholder="—"></textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">人口数据（需求基石）</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_3">人口数据（需求基石）</td>
     <td class="editable cell-data"><input type="text" data-key="macro_3_data" placeholder="—"></td>
     <td class="editable cell-threshold"><input type="text" data-key="macro_3_thresh" placeholder="—"></td>
     <td class="editable cell-assess"><textarea data-key="macro_3_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="macro_3_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="signal-cell" data-key="macro_3_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-gray">未设置</span></td>
     <td class="editable cell-op"><textarea data-key="macro_3_op" rows="1" placeholder="—"></textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">社会融资/货币增速</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_4">社会融资/货币增速</td>
     <td class="editable cell-data"><input type="text" data-key="macro_4_data" placeholder="—"></td>
     <td class="editable cell-threshold"><input type="text" data-key="macro_4_thresh" placeholder="—"></td>
     <td class="editable cell-assess"><textarea data-key="macro_4_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="macro_4_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="signal-cell" data-key="macro_4_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-gray">未设置</span></td>
     <td class="editable cell-op"><textarea data-key="macro_4_op" rows="1" placeholder="—"></textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">全国居民人均可支配收入</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_5">全国居民人均可支配收入</td>
     <td class="editable cell-data"><input type="text" data-key="macro_5_data" placeholder="—"></td>
     <td class="editable cell-threshold"><input type="text" data-key="macro_5_thresh" placeholder="—"></td>
     <td class="editable cell-assess"><textarea data-key="macro_5_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="macro_5_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="signal-cell" data-key="macro_5_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-gray">未设置</span></td>
     <td class="editable cell-op"><textarea data-key="macro_5_op" rows="1" placeholder="—"></textarea></td>
   </tr>
 
   <!-- ===== 第一层 消费需求 (rows 11-19) ===== -->
   <tr>
-    <td rowspan="9" class="section-label green" contenteditable="true">第一层
+    <td rowspan="9" class="section-label green" contenteditable="true" data-ce-key="ce_6">第一层
 消费需求</td>
-    <td class="indicator-cell" contenteditable="true">高端酒动销同比</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_7">高端酒动销同比</td>
     <td class="editable cell-data"><input type="text" data-key="l1_1_data" value="7%"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l1_1_thresh" value="0"></td>
     <td class="editable cell-assess"><textarea data-key="l1_1_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l1_1_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-green">利好</span></td>
+    <td class="signal-cell" data-key="l1_1_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-green">利好</span></td>
     <td class="editable cell-op"><textarea data-key="l1_1_op" rows="1">右侧布局信号</textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">次高端动销同比</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_8">次高端动销同比</td>
     <td class="editable cell-data"><input type="text" data-key="l1_2_data" value="-18%"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l1_2_thresh" value="-5%"></td>
     <td class="editable cell-assess"><textarea data-key="l1_2_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l1_2_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-red">利空</span></td>
+    <td class="signal-cell" data-key="l1_2_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-red">利空</span></td>
     <td class="editable cell-op"><textarea data-key="l1_2_op" rows="1">次高端回避</textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">大众酒动销同比</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_9">大众酒动销同比</td>
     <td class="editable cell-data"><input type="text" data-key="l1_3_data" placeholder="—"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l1_3_thresh" placeholder="—"></td>
     <td class="editable cell-assess"><textarea data-key="l1_3_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l1_3_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="signal-cell" data-key="l1_3_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-gray">未设置</span></td>
     <td class="editable cell-op"><textarea data-key="l1_3_op" rows="1" placeholder="—"></textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">家庭自饮同比</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_10">家庭自饮同比</td>
     <td class="editable cell-data"><input type="text" data-key="l1_4_data" placeholder="—"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l1_4_thresh" placeholder="—"></td>
     <td class="editable cell-assess"><textarea data-key="l1_4_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l1_4_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="signal-cell" data-key="l1_4_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-gray">未设置</span></td>
     <td class="editable cell-op"><textarea data-key="l1_4_op" rows="1" placeholder="—"></textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">宴席场次同比</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_11">宴席场次同比</td>
     <td class="editable cell-data"><input type="text" data-key="l1_5_data" value="5%"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l1_5_thresh" value="0"></td>
     <td class="editable cell-assess"><textarea data-key="l1_5_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l1_5_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-green">利好</span></td>
+    <td class="signal-cell" data-key="l1_5_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-green">利好</span></td>
     <td class="editable cell-op"><textarea data-key="l1_5_op" rows="1">礼品/宴席场景回暖</textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">商务宴请同比</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_12">商务宴请同比</td>
     <td class="editable cell-data"><input type="text" data-key="l1_6_data" placeholder="—"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l1_6_thresh" placeholder="—"></td>
     <td class="editable cell-assess"><textarea data-key="l1_6_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l1_6_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="signal-cell" data-key="l1_6_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-gray">未设置</span></td>
     <td class="editable cell-op"><textarea data-key="l1_6_op" rows="1" placeholder="—"></textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">政务宴请同比</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_13">政务宴请同比</td>
     <td class="editable cell-data"><input type="text" data-key="l1_7_data" placeholder="—"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l1_7_thresh" placeholder="—"></td>
     <td class="editable cell-assess"><textarea data-key="l1_7_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l1_7_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="signal-cell" data-key="l1_7_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-gray">未设置</span></td>
     <td class="editable cell-op"><textarea data-key="l1_7_op" rows="1" placeholder="—"></textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">全国餐饮收入同比</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_14">全国餐饮收入同比</td>
     <td class="editable cell-data"><input type="text" data-key="l1_8_data" placeholder="—"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l1_8_thresh" placeholder="—"></td>
     <td class="editable cell-assess"><textarea data-key="l1_8_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l1_8_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="signal-cell" data-key="l1_8_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-gray">未设置</span></td>
     <td class="editable cell-op"><textarea data-key="l1_8_op" rows="1" placeholder="—"></textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">社会消费品零售总额-烟酒类同比</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_15">社会消费品零售总额-烟酒类同比</td>
     <td class="editable cell-data"><input type="text" data-key="l1_9_data" placeholder="—"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l1_9_thresh" placeholder="—"></td>
     <td class="editable cell-assess"><textarea data-key="l1_9_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l1_9_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="signal-cell" data-key="l1_9_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-gray">未设置</span></td>
     <td class="editable cell-op"><textarea data-key="l1_9_op" rows="1" placeholder="—"></textarea></td>
   </tr>
 
   <!-- ===== 第二层 销售终端 (rows 20-23) ===== -->
   <tr>
-    <td rowspan="4" class="section-label yellow" contenteditable="true">第二层
+    <td rowspan="4" class="section-label yellow" contenteditable="true" data-ce-key="ce_16">第二层
 销售终端</td>
-    <td class="indicator-cell" contenteditable="true">飞天茅台批价(元)</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_17">飞天茅台批价(元)</td>
     <td class="editable cell-data"><input type="text" data-key="l2_1_data" value="1645"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l2_1_thresh" value="1700"></td>
     <td class="editable cell-assess"><textarea data-key="l2_1_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l2_1_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-yellow">观察</span></td>
+    <td class="signal-cell" data-key="l2_1_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-yellow">观察</span></td>
     <td class="editable cell-op"><textarea data-key="l2_1_op" rows="1">批价站稳1700即确认</textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">普五批价(元)</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_18">普五批价(元)</td>
     <td class="editable cell-data"><input type="text" data-key="l2_2_data" value="765"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l2_2_thresh" value="800"></td>
     <td class="editable cell-assess"><textarea data-key="l2_2_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l2_2_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-yellow">观察</span></td>
+    <td class="signal-cell" data-key="l2_2_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-yellow">观察</span></td>
     <td class="editable cell-op"><textarea data-key="l2_2_op" rows="1">800元是关键阈值</textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">国窖1573高度批价(元)</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_19">国窖1573高度批价(元)</td>
     <td class="editable cell-data"><input type="text" data-key="l2_3_data" value="885"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l2_3_thresh" value="900"></td>
     <td class="editable cell-assess"><textarea data-key="l2_3_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l2_3_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-yellow">观察</span></td>
+    <td class="signal-cell" data-key="l2_3_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-yellow">观察</span></td>
     <td class="editable cell-op"><textarea data-key="l2_3_op" rows="1">最接近阈值</textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">国窖1573低度批价(元)</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_20">国窖1573低度批价(元)</td>
     <td class="editable cell-data"><input type="text" data-key="l2_4_data" placeholder="—"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l2_4_thresh" placeholder="—"></td>
     <td class="editable cell-assess"><textarea data-key="l2_4_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l2_4_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="signal-cell" data-key="l2_4_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-gray">未设置</span></td>
     <td class="editable cell-op"><textarea data-key="l2_4_op" rows="1" placeholder="—"></textarea></td>
   </tr>
 
   <!-- ===== 第三层 经销商渠道 (rows 24-29) ===== -->
   <tr>
-    <td rowspan="6" class="section-label green" contenteditable="true">第三层
+    <td rowspan="6" class="section-label green" contenteditable="true" data-ce-key="ce_21">第三层
 经销商渠道</td>
-    <td class="indicator-cell" contenteditable="true">贵州茅台渠道库存(月)</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_22">贵州茅台渠道库存(月)</td>
     <td class="editable cell-data"><input type="text" data-key="l3_1_data" value="1"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l3_1_thresh" value="1.5"></td>
     <td class="editable cell-assess"><textarea data-key="l3_1_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l3_1_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-green">利好</span></td>
+    <td class="signal-cell" data-key="l3_1_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-green">利好</span></td>
     <td class="editable cell-op"><textarea data-key="l3_1_op" rows="1">健康</textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">五粮液渠道库存(月)</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_23">五粮液渠道库存(月)</td>
     <td class="editable cell-data"><input type="text" data-key="l3_2_data" value="3.5"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l3_2_thresh" value="3"></td>
     <td class="editable cell-assess"><textarea data-key="l3_2_assess" rows="1">3</textarea></td>
-    <td class="signal-cell" data-key="l3_2_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-yellow">观察</span></td>
+    <td class="signal-cell" data-key="l3_2_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-yellow">观察</span></td>
     <td class="editable cell-op"><textarea data-key="l3_2_op" rows="1">接近健康水平</textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">泸州老窖渠道库存(月)</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_24">泸州老窖渠道库存(月)</td>
     <td class="editable cell-data"><input type="text" data-key="l3_3_data" value="7"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l3_3_thresh" value="3"></td>
     <td class="editable cell-assess"><textarea data-key="l3_3_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l3_3_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-red">利空</span></td>
+    <td class="signal-cell" data-key="l3_3_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-red">利空</span></td>
     <td class="editable cell-op"><textarea data-key="l3_3_op" rows="1">最大持仓风险点</textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">其他白酒渠道库存(月)</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_25">其他白酒渠道库存(月)</td>
     <td class="editable cell-data"><input type="text" data-key="l3_4_data" placeholder="—"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l3_4_thresh" placeholder="—"></td>
     <td class="editable cell-assess"><textarea data-key="l3_4_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l3_4_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="signal-cell" data-key="l3_4_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-gray">未设置</span></td>
     <td class="editable cell-op"><textarea data-key="l3_4_op" rows="1" placeholder="—"></textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">行业平均存货周转(天)</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_26">行业平均存货周转(天)</td>
     <td class="editable cell-data"><input type="text" data-key="l3_5_data" value="900"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l3_5_thresh" value="360"></td>
     <td class="editable cell-assess"><textarea data-key="l3_5_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l3_5_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-red">利空</span></td>
+    <td class="signal-cell" data-key="l3_5_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-red">利空</span></td>
     <td class="editable cell-op"><textarea data-key="l3_5_op" rows="1">历史峰值</textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">经销商打款意愿(1-10分)</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_27">经销商打款意愿(1-10分)</td>
     <td class="editable cell-data"><input type="text" data-key="l3_6_data" value="3"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l3_6_thresh" value="7"></td>
     <td class="editable cell-assess"><textarea data-key="l3_6_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l3_6_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-red">利空</span></td>
+    <td class="signal-cell" data-key="l3_6_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-red">利空</span></td>
     <td class="editable cell-op"><textarea data-key="l3_6_op" rows="1">信心仍在冰点</textarea></td>
   </tr>
 
   <!-- ===== 第四层 酒厂报表 (rows 30-36) ===== -->
   <tr>
-    <td rowspan="7" class="section-label yellow" contenteditable="true">第四层
+    <td rowspan="7" class="section-label yellow" contenteditable="true" data-ce-key="ce_28">第四层
 酒厂报表（收入、合同负债、利润、现金流）</td>
-    <td class="indicator-cell" contenteditable="true">中证白酒指数</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_29">中证白酒指数</td>
     <td class="editable cell-data"><input type="text" data-key="l4_1_data" value="89.6"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l4_1_thresh" value="80"></td>
     <td class="editable cell-assess"><textarea data-key="l4_1_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l4_1_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-green">利好</span></td>
+    <td class="signal-cell" data-key="l4_1_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-green">利好</span></td>
     <td class="editable cell-op"><textarea data-key="l4_1_op" rows="1">右侧确认信号</textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">贵州茅台</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_30">贵州茅台</td>
     <td class="editable cell-data"><input type="text" data-key="l4_2_data" value="−1.8%"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l4_2_thresh" value="0"></td>
     <td class="editable cell-assess"><textarea data-key="l4_2_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l4_2_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-yellow">观察</span></td>
+    <td class="signal-cell" data-key="l4_2_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-yellow">观察</span></td>
     <td class="editable cell-op"><textarea data-key="l4_2_op" rows="1">行业整体接近转正</textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">五粮液</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_31">五粮液</td>
     <td class="editable cell-data"><input type="text" data-key="l4_3_data" value="−6.2%"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l4_3_thresh" value="0"></td>
     <td class="editable cell-assess"><textarea data-key="l4_3_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l4_3_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-red">利空</span></td>
+    <td class="signal-cell" data-key="l4_3_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-red">利空</span></td>
     <td class="editable cell-op"><textarea data-key="l4_3_op" rows="1">次高端出清未完</textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">山西汾酒</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_32">山西汾酒</td>
     <td class="editable cell-data"><input type="text" data-key="l4_4_data" placeholder="—"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l4_4_thresh" placeholder="—"></td>
     <td class="editable cell-assess"><textarea data-key="l4_4_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l4_4_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="signal-cell" data-key="l4_4_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-gray">未设置</span></td>
     <td class="editable cell-op"><textarea data-key="l4_4_op" rows="1" placeholder="—"></textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">泸州老窖</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_33">泸州老窖</td>
     <td class="editable cell-data"><input type="text" data-key="l4_5_data" placeholder="—"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l4_5_thresh" placeholder="—"></td>
     <td class="editable cell-assess"><textarea data-key="l4_5_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l4_5_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="signal-cell" data-key="l4_5_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-gray">未设置</span></td>
     <td class="editable cell-op"><textarea data-key="l4_5_op" rows="1" placeholder="—"></textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">洋河股份</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_34">洋河股份</td>
     <td class="editable cell-data"><input type="text" data-key="l4_6_data" placeholder="—"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l4_6_thresh" placeholder="—"></td>
     <td class="editable cell-assess"><textarea data-key="l4_6_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l4_6_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-gray">未设置</span></td>
+    <td class="signal-cell" data-key="l4_6_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-gray">未设置</span></td>
     <td class="editable cell-op"><textarea data-key="l4_6_op" rows="1" placeholder="—"></textarea></td>
   </tr>
   <tr>
-    <td class="indicator-cell" contenteditable="true">其他</td>
+    <td class="indicator-cell" contenteditable="true" data-ce-key="ce_35">其他</td>
     <td class="editable cell-data"><input type="text" data-key="l4_7_data" value="−66%"></td>
     <td class="editable cell-threshold"><input type="text" data-key="l4_7_thresh" value="0"></td>
     <td class="editable cell-assess"><textarea data-key="l4_7_assess" rows="1" placeholder="—"></textarea></td>
-    <td class="signal-cell" data-key="l4_7_signal" onclick="cycleSignal(this)"><span class="signal-badge signal-red">利空</span></td>
+    <td class="signal-cell" data-key="l4_7_signal" onclick="cycleSignal(this)" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cycleSignal(this);}" ><span class="signal-badge signal-red">利空</span></td>
     <td class="editable cell-op"><textarea data-key="l4_7_op" rows="1">中小酒企持续亏损</textarea></td>
   </tr>
 
@@ -945,8 +962,9 @@ function collectData() {
     }
   });
   // contenteditable cells (section labels & indicators)
-  document.querySelectorAll('[contenteditable="true"]').forEach((el, i) => {
-    data['ce_' + i] = el.textContent;
+  document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+    const key = el.dataset.ceKey;
+    if (key) data[key] = el.textContent;
   });
   return data;
 }
@@ -961,9 +979,10 @@ function applyData(data) {
       setSignalBadge(el, val);
     }
   });
-  document.querySelectorAll('[contenteditable="true"]').forEach((el, i) => {
-    if (data['ce_' + i] !== undefined) {
-      el.textContent = data['ce_' + i];
+  document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+    const key = el.dataset.ceKey;
+    if (key && data[key] !== undefined) {
+      el.textContent = data[key];
     }
   });
 }
@@ -1050,23 +1069,86 @@ function exportJSON() {
 function exportCSV() {
   const rows = [];
   const table = document.getElementById('mainTable');
+  const numCols = 7; // Total columns in the table
+
+  // Build a map of rowspan fill-downs
+  const rowFill = [];
+
+  let rowIdx = 0;
   for (const tr of table.querySelectorAll('tr')) {
     const cells = [];
+    let colIdx = 0;
+
+    // Fill in any rowspan carry-overs first
+    while (rowFill[colIdx] && rowFill[colIdx].count > 0) {
+      cells.push(rowFill[colIdx].text);
+      rowFill[colIdx].count--;
+      colIdx++;
+    }
+
     for (const td of tr.querySelectorAll('th, td')) {
+      // Skip columns already filled by rowspan
+      while (rowFill[colIdx] && rowFill[colIdx].count > 0) {
+        cells.push(rowFill[colIdx].text);
+        rowFill[colIdx].count--;
+        colIdx++;
+      }
+
       let text = '';
       const input = td.querySelector('input, textarea');
       const badge = td.querySelector('.signal-badge');
       if (input) text = input.value;
       else if (badge) text = badge.textContent;
       else text = td.textContent.trim();
+
+      // Handle rowspan
+      const rowspan = parseInt(td.getAttribute('rowspan') || '1', 10);
+      if (rowspan > 1) {
+        if (!rowFill[colIdx]) rowFill[colIdx] = { count: 0, text: '' };
+        rowFill[colIdx] = { count: rowspan - 1, text: text };
+      }
+
       // Escape CSV
       if (text.includes(',') || text.includes('"') || text.includes('\n')) {
         text = '"' + text.replace(/"/g, '""') + '"';
       }
       cells.push(text);
+      colIdx++;
     }
+
+    // Fill remaining columns from rowspan carry-overs
+    while (colIdx < numCols) {
+      if (rowFill[colIdx] && rowFill[colIdx].count > 0) {
+        cells.push(rowFill[colIdx].text);
+        rowFill[colIdx].count--;
+      } else {
+        cells.push('');
+      }
+      colIdx++;
+    }
+
     if (cells.length) rows.push(cells.join(','));
+    rowIdx++;
   }
+
+  // Append summary section
+  rows.push('');
+  rows.push('白酒周期四层传导综合进度摘要');
+  const sumLabels = ['第一层：消费需求', '第二层：销售终端', '第三层：经销商渠道', '第四层：酒厂报表'];
+  const sumKeys = ['sum_l1', 'sum_l2', 'sum_l3', 'sum_l4'];
+  sumLabels.forEach((label, i) => {
+    const el = document.querySelector(`[data-key="${sumKeys[i]}"]`);
+    const val = el ? el.value : '';
+    rows.push(label + ',' + (val.includes(',') || val.includes('"') ? '"' + val.replace(/"/g, '""') + '"' : val));
+  });
+
+  // Append footer
+  rows.push('');
+  const freqEl = document.querySelector('[data-key="freq"]');
+  const dateEl = document.querySelector('[data-key="date"]');
+  rows.push('更新频率,' + (freqEl ? freqEl.value : ''));
+  rows.push('更新日期,' + (dateEl ? dateEl.value : ''));
+
   const csv = '\uFEFF' + rows.join('\n'); // BOM for Excel
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
@@ -1090,6 +1172,9 @@ function handleFileImport(event) {
       const data = JSON.parse(e.target.result);
       applyData(data);
       saveData();
+      setTimeout(() => {
+        document.querySelectorAll('textarea').forEach(autoResize);
+      }, 50);
       alert('数据导入成功！');
     } catch(err) {
       alert('导入失败：文件格式不正确');
@@ -1107,14 +1192,9 @@ const saved = loadData();
 if (saved) {
   applyData(saved);
 }
+dataLoaded = true;  // Local data loaded (or defaults applied) — safe to auto-save now
 
-// Attach auto-save listeners
-document.querySelectorAll('input[data-key], textarea[data-key]').forEach(el => {
-  el.addEventListener('input', saveData);
-});
-document.querySelectorAll('[contenteditable="true"]').forEach((el, i) => {
-  el.addEventListener('input', saveData);
-});
+// NOTE: auto-save listeners are attached AFTER saveData hook at the bottom of this file
 
 // Initial save status
 const status = document.getElementById('saveStatus');
@@ -1191,7 +1271,28 @@ let cloudSHA = null;
 let cloudSyncTimer = null;
 let cloudSyncing = false;
 let cloudLoading = false;
+let dataLoaded = false;  // Prevent auto-save before real data is loaded
 let cloudEnabled = !!localStorage.getItem(TOKEN_KEY);
+
+// --- Utility functions (used throughout) ---
+function utf8ToBase64(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function base64ToUtf8(b64) {
+  return decodeURIComponent(escape(atob(b64)));
+}
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (type || 'info') + ' show';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.classList.remove('show'); }, 3000);
+}
 
 function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
 function setToken(token) {
@@ -1245,7 +1346,7 @@ async function cloudSave(commitMsg) {
     savedAt: new Date().toISOString(),
     model: 'baijiu_cycle'
   };
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))));
+  const content = utf8ToBase64(JSON.stringify(payload, null, 2));
   const msg = commitMsg || ('白酒周期模型更新 · ' + new Date().toLocaleString('zh-CN'));
 
   try {
@@ -1310,7 +1411,7 @@ async function cloudLoad() {
     const result = await resp.json();
     if (resp.ok) {
       cloudSHA = result.sha;
-      const content = decodeURIComponent(escape(atob(result.content)));
+      const content = base64ToUtf8(result.content);
       const payload = JSON.parse(content);
       setCloudStatus('已同步 · ' + new Date(payload.savedAt).toLocaleString('zh-CN'), 'synced');
       cloudSyncing = false;
@@ -1334,24 +1435,34 @@ async function cloudLoad() {
 async function cloudLoadAndRender() {
   const result = await cloudLoad();
   if (result && result.reason === 'ok') {
+    cloudLoading = true;  // Suppress auto-save during apply
     applyData(result.data);
-    saveData();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(result.data));
+    cloudLoading = false;
+    dataLoaded = true;
     setTimeout(() => {
       document.querySelectorAll('textarea').forEach(autoResize);
     }, 50);
+    showToast('已从云端加载最新数据', 'success');
+  } else if (result && result.reason === 'no-file') {
+    dataLoaded = true;
+    showToast('云端无数据，请先保存', 'info');
+  } else if (result && result.reason === 'error') {
+    dataLoaded = true;
+    showToast('加载失败: ' + (result.message || '未知错误'), 'error');
   }
 }
 
-// --- Manual save with optional custom message ---
+// --- Manual save (auto-generates message) ---
 async function manualCloudSave() {
-  const msg = prompt('请输入本次保存的说明（可留空使用默认）：', '');
-  if (msg === null) return;
-  await cloudSave(msg || '');
+  const msg = '手动保存 · ' + new Date().toLocaleString('zh-CN');
+  await cloudSave(msg);
 }
 
 // --- Debounced auto-save to cloud (3s after last edit) ---
 function scheduleCloudSync() {
   if (cloudLoading || !cloudEnabled) return;
+  if (!dataLoaded) return;  // Don't auto-save until real data has been loaded
   if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
   cloudSyncTimer = setTimeout(() => {
     cloudSave('自动同步 · ' + new Date().toLocaleString('zh-CN'));
@@ -1364,22 +1475,7 @@ function scheduleCloudSync() {
 // =============================================
 const LOCAL_SNAPSHOTS_KEY = 'baijiu_local_snapshots';
 
-// --- Base64 helpers (UTF-8 safe) ---
-function utf8ToBase64(str) {
-  return btoa(unescape(encodeURIComponent(str)));
-}
-function base64ToUtf8(b64) {
-  return decodeURIComponent(escape(atob(b64)));
-}
-
-// --- Toast ---
-function showToast(msg, type) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'toast ' + (type || 'info') + ' show';
-  clearTimeout(el._timer);
-  el._timer = setTimeout(() => { el.classList.remove('show'); }, 3000);
-}
+// (utf8ToBase64, base64ToUtf8, escapeHtml, showToast are defined above near CLOUD_CONFIG)
 
 // --- GitHub API helpers (for snapshots) ---
 async function githubGet(path) {
@@ -1445,12 +1541,6 @@ async function githubDelete(path, sha, message) {
     throw new Error(`Delete failed: ${err.message || resp.statusText}`);
   }
   return resp.json();
-}
-
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
 }
 
 // --- Save snapshot ---
@@ -1527,8 +1617,8 @@ async function loadSnapshotList() {
           <div class="snap-time">${timeDisplay}</div>
         </div>
         <div class="snap-actions">
-          <button class="snap-btn restore" onclick="restoreSnapshotLocal('${s.name}')">恢复</button>
-          <button class="snap-btn delete" onclick="deleteSnapshotLocal('${s.name}')">删除</button>
+          <button class="snap-btn restore" data-action="restore-local" data-name="${escapeHtml(s.name)}">恢复</button>
+          <button class="snap-btn delete" data-action="delete-local" data-name="${escapeHtml(s.name)}">删除</button>
         </div>
       </div>`;
     }).join('');
@@ -1563,8 +1653,8 @@ async function loadSnapshotList() {
           <div class="snap-time">${timeDisplay}</div>
         </div>
         <div class="snap-actions">
-          <button class="snap-btn restore" onclick="restoreSnapshot('${f.path}')">恢复</button>
-          <button class="snap-btn delete" onclick="deleteSnapshot('${f.path}', '${f.sha}', '${f.name}')">删除</button>
+          <button class="snap-btn restore" data-action="restore-cloud" data-path="${escapeHtml(f.path)}">恢复</button>
+          <button class="snap-btn delete" data-action="delete-cloud" data-path="${escapeHtml(f.path)}" data-sha="${escapeHtml(f.sha)}" data-name="${escapeHtml(f.name)}">删除</button>
         </div>
       </div>`;
     }).join('');
@@ -1572,6 +1662,22 @@ async function loadSnapshotList() {
     listEl.innerHTML = `<div class="snapshot-empty">加载失败: ${e.message}</div>`;
   }
 }
+
+// --- Event delegation for snapshot buttons (XSS-safe) ---
+document.getElementById('snapshotList').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  if (action === 'restore-local') {
+    restoreSnapshotLocal(btn.dataset.name);
+  } else if (action === 'delete-local') {
+    deleteSnapshotLocal(btn.dataset.name);
+  } else if (action === 'restore-cloud') {
+    restoreSnapshot(btn.dataset.path);
+  } else if (action === 'delete-cloud') {
+    deleteSnapshot(btn.dataset.path, btn.dataset.sha, btn.dataset.name);
+  }
+});
 
 // --- Restore from cloud ---
 async function restoreSnapshot(path) {
@@ -1672,15 +1778,22 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
   if (cloudEnabled) {
     const result = await cloudLoad();
     if (result && result.reason === 'ok') {
+      cloudLoading = true;  // Suppress auto-save during apply
       applyData(result.data);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(result.data));
+      cloudLoading = false;
+      dataLoaded = true;
       setTimeout(() => {
         document.querySelectorAll('textarea').forEach(autoResize);
       }, 50);
       const status = document.getElementById('saveStatus');
       status.textContent = '已从云端加载';
       status.className = 'saved';
+    } else {
+      dataLoaded = true;
     }
+  } else {
+    dataLoaded = true;
   }
 })();
 
@@ -1695,7 +1808,7 @@ saveData = function() {
 document.querySelectorAll('input[data-key], textarea[data-key]').forEach(el => {
   el.addEventListener('input', saveData);
 });
-document.querySelectorAll('[contenteditable="true"]').forEach((el) => {
+document.querySelectorAll('[contenteditable="true"]').forEach(el => {
   el.addEventListener('input', saveData);
 });
 </script>
