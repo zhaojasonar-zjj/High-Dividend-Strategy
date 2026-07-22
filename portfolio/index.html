@@ -1,0 +1,3790 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>仓位管理框架 — 贝叶斯 × 凯利</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --border: #e2e5ea;
+    --primary: #2563eb;
+    --primary-light: #dbeafe;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --input-bg: #eff6ff;
+    --calc-bg: #f8fafc;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --success: #10b981;
+    --header-bg: #1e293b;
+    --header-text: #f8fafc;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  /* Top bar */
+  .topbar {
+    background: var(--header-bg);
+    color: var(--header-text);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .topbar h1 { font-size: 18px; font-weight: 600; }
+  .topbar .subtitle { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+  .topbar-actions { display: flex; gap: 8px; }
+  .btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  .btn:hover { background: var(--primary-light); border-color: var(--primary); }
+  .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn-danger { color: var(--danger); border-color: #fecaca; }
+  .btn-danger:hover { background: #fef2f2; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
+    padding: 0 16px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  .tab {
+    padding: 10px 18px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-size: 13px;
+    color: var(--text-muted);
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .tab:hover { color: var(--primary); }
+  .tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    font-weight: 600;
+  }
+
+  /* Content */
+  .content { padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Instruction panel */
+  .instr-panel { background: #fff; border-left: 4px solid var(--primary); padding: 16px 20px; margin-bottom: 12px; border-radius: 0 8px 8px 0; }
+  .instr-panel h3 { font-size: 15px; margin-bottom: 8px; }
+  .instr-panel p, .instr-panel li { font-size: 13px; color: var(--text); line-height: 1.8; }
+  .instr-panel ul, .instr-panel ol { padding-left: 20px; margin: 6px 0; }
+  .instr-panel .blue-note { background: var(--primary-light); padding: 8px 12px; border-radius: 6px; margin-top: 8px; font-size: 13px; }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table.record {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  table.record th {
+    background: #f1f5f9;
+    padding: 10px 8px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--text);
+    border: 1px solid var(--border);
+    white-space: pre-line;
+    position: relative;
+  }
+  table.record th .auto-tag {
+    display: block;
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  table.record td {
+    padding: 4px;
+    border: 1px solid var(--border);
+    text-align: center;
+    vertical-align: middle;
+  }
+  table.record td input, table.record td textarea {
+    width: 100%;
+    border: none;
+    background: var(--input-bg);
+    padding: 6px 8px;
+    font-size: 13px;
+    border-radius: 4px;
+    font-family: inherit;
+    text-align: center;
+  }
+  table.record td input:focus, table.record td textarea:focus {
+    outline: 2px solid var(--primary);
+    background: #fff;
+  }
+  table.record td input.calc, table.record td .calc-cell {
+    background: var(--calc-bg);
+    color: var(--text);
+    font-weight: 500;
+    border: none;
+    text-align: center;
+    padding: 6px 8px;
+    border-radius: 4px;
+  }
+  table.record td .calc-cell { display: block; min-height: 20px; }
+  table.record td textarea {
+    text-align: left;
+    resize: vertical;
+    min-height: 32px;
+  }
+  table.record td.row-num { background: #f8fafc; color: var(--text-muted); font-size: 12px; width: 36px; }
+  table.record td.action-cell { width: 50px; }
+  .row-empty td { opacity: 0.5; }
+
+  /* Dashboard */
+  .dashboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .dashboard-table th {
+    background: var(--header-bg);
+    color: #fff;
+    padding: 10px 12px;
+    text-align: center;
+    font-weight: 500;
+    border: 1px solid #334155;
+  }
+  .dashboard-table td {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    text-align: center;
+    background: #fff;
+  }
+  .dashboard-table td.name { font-weight: 600; }
+  .dashboard-table tr:nth-child(even) td { background: #f8fafc; }
+  .dash-tip {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #92400e;
+  }
+
+  /* Kelly calculator */
+  .kelly-calc {
+    display: grid;
+    grid-template-columns: 200px 160px 1fr;
+    gap: 10px 16px;
+    align-items: center;
+  }
+  .kelly-calc label { font-size: 13px; font-weight: 500; }
+  .kelly-calc input {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    background: var(--input-bg);
+    font-family: inherit;
+  }
+  .kelly-calc input:focus { outline: 2px solid var(--primary); background: #fff; }
+  .kelly-calc .hint { font-size: 12px; color: var(--text-muted); }
+  .kelly-calc .calc-row input {
+    background: var(--calc-bg);
+    font-weight: 600;
+    color: var(--primary);
+    border: 1px solid #bfdbfe;
+  }
+
+  /* Table actions */
+  .table-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 12px 0;
+  }
+  .table-actions .left { display: flex; gap: 8px; align-items: center; }
+  .table-actions .info { font-size: 12px; color: var(--text-muted); }
+
+  /* Notes block */
+  .notes-block {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text);
+    white-space: pre-line;
+  }
+
+  /* Role table */
+  table.role-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 12px;
+  }
+  table.role-table th {
+    background: #f1f5f9;
+    padding: 10px;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+  table.role-table td {
+    padding: 10px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  table.role-table th[contenteditable],
+  table.role-table td[contenteditable] {
+    cursor: text;
+    transition: background 0.15s;
+  }
+  table.role-table th[contenteditable]:hover,
+  table.role-table td[contenteditable]:hover {
+    background: var(--primary-light);
+  }
+  table.role-table th[contenteditable]:focus,
+  table.role-table td[contenteditable]:focus {
+    outline: 2px solid var(--primary);
+    background: #fff;
+  }
+
+  /* Quote table */
+  .quote-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .quote-toolbar input[type="text"] {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    width: 180px;
+  }
+  .quote-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .quote-table th {
+    background: var(--header-bg);
+    color: var(--header-text);
+    padding: 8px 10px;
+    text-align: right;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .quote-table th:first-child, .quote-table th:nth-child(3) { text-align: left; }
+  .quote-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .quote-table td:first-child { text-align: left; font-family: monospace; color: var(--text-muted); }
+  .quote-table td:nth-child(3) { text-align: left; font-weight: 600; }
+  .quote-table tr:hover { background: var(--primary-light); }
+  .pos { color: var(--danger); font-weight: 600; }
+  .neg { color: var(--success); font-weight: 600; }
+  .flat { color: var(--text-muted); }
+  .quote-status {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .quote-status .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+  }
+  .quote-status .dot.off { background: var(--text-muted); }
+  .quote-status .dot.err { background: var(--danger); }
+  .del-quote {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+  }
+  .del-quote:hover { opacity: 0.7; }
+
+  /* Fundamental data section */
+  .fund-section {
+    margin-top: 20px;
+    border-top: 2px solid var(--border);
+    padding-top: 16px;
+  }
+  .fund-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .fund-header .card-title { cursor: pointer; }
+  .fund-toggle {
+    font-size: 12px;
+    color: var(--primary);
+    background: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .fund-toggle.collapsed::before { content: '▶ 展开'; }
+  .fund-toggle.expanded::before { content: '▼ 收起'; }
+  .fund-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .fund-table th {
+    background: var(--calc-bg);
+    color: var(--text);
+    padding: 7px 8px;
+    text-align: right;
+    font-weight: 600;
+    white-space: nowrap;
+    border-bottom: 2px solid var(--border);
+  }
+  .fund-table th:first-child { text-align: left; }
+  .fund-table th:nth-child(2) { text-align: left; }
+  .fund-table td {
+    padding: 7px 8px;
+    border-bottom: 1px solid var(--border);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .fund-table td:first-child { text-align: left; font-family: monospace; color: var(--text-muted); }
+  .fund-table td:nth-child(2) { text-align: left; font-weight: 600; }
+  .fund-table tr:hover { background: var(--primary-light); }
+  .fund-group-header th {
+    background: var(--header-bg);
+    color: var(--header-text);
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .fund-status {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .fund-status .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+  }
+  .fund-status .dot.off { background: var(--text-muted); }
+  .fund-status .dot.err { background: var(--danger); }
+  .fund-status .dot.loading { background: var(--warn); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* Editable cells in fund-table */
+  .fund-table td[contenteditable] {
+    cursor: text;
+    background: #fffcf0;
+    min-width: 70px;
+  }
+  .fund-table td[contenteditable]:hover {
+    background: #fef3c7;
+  }
+  .fund-table td[contenteditable]:focus {
+    outline: 2px solid var(--primary);
+    background: #fff;
+  }
+  .fund-table td.calc-cell {
+    background: var(--calc-bg);
+    font-weight: 600;
+  }
+  .fund-table td.edit-hint {
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 11px;
+  }
+
+  /* Portfolio valuation */
+  .portfolio-val {
+    margin-top: 18px;
+    padding: 14px 16px;
+    background: var(--calc-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .portfolio-val-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .portfolio-val-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .portfolio-val-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  .portfolio-val-table th {
+    text-align: center;
+    padding: 8px;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  .portfolio-val-table td {
+    text-align: center;
+    padding: 12px 8px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary);
+    font-family: 'Courier New', monospace;
+  }
+
+  /* Discipline system */
+  .discipline-panel {
+    margin-top: 16px;
+    background: var(--card-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .discipline-body { padding: 14px 16px; }
+  .discipline-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .discipline-tab {
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    font-family: inherit;
+  }
+  .discipline-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
+  .discipline-section { display: none; }
+  .discipline-section.active { display: block; }
+
+  /* Decision log */
+  .dec-log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .dec-log-table th {
+    background: var(--header-bg);
+    color: var(--header-text);
+    padding: 5px 4px;
+    text-align: left;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .dec-log-table td {
+    padding: 4px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dec-log-table td[contenteditable] {
+    cursor: text;
+    background: #fffcf0;
+    min-width: 40px;
+  }
+  .dec-log-table td[contenteditable]:focus {
+    outline: 2px solid var(--primary);
+    background: #fff;
+  }
+  .dec-log-table .del-row {
+    color: var(--danger);
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 14px;
+    padding: 0 2px;
+  }
+
+  /* Questionnaire */
+  .quest-period {
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+  .quest-period input {
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+    width: 120px;
+  }
+  .quest-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .quest-table th {
+    background: var(--header-bg);
+    color: var(--header-text);
+    padding: 5px 4px;
+    text-align: left;
+    font-weight: 500;
+  }
+  .quest-table td {
+    padding: 4px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .quest-table .dim-cell { font-weight: 700; white-space: nowrap; }
+  .quest-table .weight-cell { text-align: center; font-weight: 600; }
+  .quest-table .score-input {
+    width: 42px;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 2px;
+    font-size: 12px;
+    font-family: inherit;
+  }
+  .quest-summary {
+    margin-top: 10px;
+    padding: 10px;
+    background: var(--calc-bg);
+    border-radius: 6px;
+    font-size: 12px;
+  }
+  .quest-summary table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .quest-summary td {
+    padding: 3px 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .quest-summary .total-row {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--primary);
+    border-top: 2px solid var(--border);
+  }
+  .quest-status {
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    padding: 8px;
+    border-radius: 6px;
+    margin-top: 8px;
+  }
+  .quest-status.ok { background: #d4edda; color: #155724; }
+  .quest-status.warn { background: #fff3cd; color: #856404; }
+
+  /* History trend */
+  .hist-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .hist-table th {
+    background: var(--header-bg);
+    color: var(--header-text);
+    padding: 5px 4px;
+    text-align: center;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .hist-table td {
+    padding: 4px;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+  .hist-table td[contenteditable] {
+    cursor: text;
+    background: #fffcf0;
+  }
+  .hist-table td[contenteditable]:focus {
+    outline: 2px solid var(--primary);
+    background: #fff;
+  }
+  .hist-table .del-row {
+    color: var(--danger);
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 14px;
+    padding: 0 2px;
+  }
+  .hist-current-row { background: var(--primary-light); font-weight: 600; }
+  .hist-chart {
+    margin-top: 10px;
+    width: 100%;
+    height: 120px;
+  }
+
+  /* Cloud sync */
+  .cloud-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.1);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+  .cloud-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .cloud-dot.synced { background: #10b981; }
+  .cloud-dot.saving { background: #f59e0b; animation: pulse 1s infinite; }
+  .cloud-dot.loading { background: #3b82f6; animation: pulse 1s infinite; }
+  .cloud-dot.error { background: #ef4444; }
+  .cloud-dot.offline { background: #6b7280; }
+  .cloud-dot.ready { background: #10b981; }
+  #cloud-status-text { white-space: nowrap; max-width: 300px; overflow: hidden; text-overflow: ellipsis; }
+  .cloud-btn {
+    padding: 4px 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    background: rgba(255,255,255,0.1);
+    color: var(--header-text);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .cloud-btn:hover { background: rgba(255,255,255,0.2); }
+
+  /* Snapshot modal */
+  .snapshot-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+  .snapshot-modal.show { display: flex; }
+  .snapshot-modal-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 28px 32px;
+    max-width: 560px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .snapshot-modal-box h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .snapshot-modal-box p {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+  .snapshot-modal-box input[type="text"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    background: var(--input-bg);
+    color: var(--text);
+    box-sizing: border-box;
+  }
+  .snapshot-modal-box input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+  .snapshot-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .snapshot-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .snapshot-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .snapshot-item:last-child { border-bottom: none; }
+  .snapshot-item .snap-info { flex: 1; }
+  .snapshot-item .snap-label { font-weight: 600; color: var(--text); }
+  .snapshot-item .snap-time { font-size: 11px; color: var(--text-muted); }
+  .snapshot-item .snap-actions { display: flex; gap: 6px; }
+  .snap-btn {
+    padding: 4px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    background: #fff;
+    color: #333;
+  }
+  .snap-btn:hover { background: #f0f0f0; }
+  .snap-btn.restore { color: #1e7e34; border-color: #1e7e34; }
+  .snap-btn.delete { color: #dc3545; border-color: #dc3545; }
+  .empty-hint { padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+  /* Token modal */
+  .token-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+  .token-modal.show { display: flex; }
+  .token-modal-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 28px 32px;
+    max-width: 560px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .token-modal-box h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .token-modal-box p {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+  .token-modal-box p a {
+    color: var(--primary);
+    text-decoration: none;
+  }
+  .token-modal-box p a:hover { text-decoration: underline; }
+  .token-modal-box input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: monospace;
+    margin-bottom: 16px;
+    background: var(--input-bg);
+  }
+  .token-modal-box input:focus {
+    outline: 2px solid var(--primary);
+    background: #fff;
+  }
+  .token-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+  .token-modal-actions .btn-danger {
+    margin-right: auto;
+  }
+  .token-modal-detail {
+    background: var(--calc-bg);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--text-muted);
+  }
+  .token-modal-detail ol { padding-left: 18px; }
+  .token-modal-detail code {
+    background: var(--primary-light);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11px;
+    color: var(--primary);
+  }
+
+  /* Mindset tracker */
+  .mindset-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .mindset-summary-card {
+    background: var(--calc-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    text-align: center;
+  }
+  .mindset-summary-card .label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+  .mindset-summary-card .value { font-size: 22px; font-weight: 700; }
+  .mindset-summary-card .value.warn { color: var(--warn); }
+  .mindset-summary-card .value.danger { color: var(--danger); }
+  .mindset-summary-card .value.success { color: var(--success); }
+  .mindset-score-input {
+    width: 60px; padding: 4px 8px; border: 1px solid var(--border);
+    border-radius: 4px; font-size: 14px; font-weight: 600;
+    text-align: center; background: var(--input-bg); font-family: inherit;
+  }
+  .mindset-status { font-size: 12px; font-weight: 500; }
+  .mindset-status.ok { color: var(--success); }
+  .mindset-status.mid { color: var(--warn); }
+  .mindset-status.bad { color: var(--danger); }
+  .mindset-bar-container {
+    margin-top: 16px; background: var(--calc-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px 18px;
+  }
+  .mindset-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+  .mindset-bar-label { width: 80px; text-align: right; color: var(--text-muted); flex-shrink: 0; }
+  .mindset-bar-track { flex: 1; height: 14px; background: #e9ecef; border-radius: 7px; overflow: hidden; }
+  .mindset-bar-fill { height: 100%; border-radius: 7px; transition: width 0.3s; }
+  .mindset-bar-score { width: 40px; font-weight: 600; flex-shrink: 0; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .content { padding: 12px; }
+    .topbar { padding: 12px; }
+    .topbar h1 { font-size: 15px; }
+    .kelly-calc { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>高股息策略 × 贝叶斯定理 × 凯利公式 — 仓位管理工作表</h1>
+    <div class="subtitle">网页版 · 云端同步 · 公式实时计算</div>
+  </div>
+  <div class="topbar-actions">
+    <div class="cloud-bar">
+      <span class="cloud-dot offline" id="cloud-dot"></span>
+      <span id="cloud-status-text">未连接云端</span>
+      <button class="cloud-btn" onclick="manualCloudSave()" title="手动保存到云端">⬆ 保存</button>
+      <button class="cloud-btn" onclick="cloudLoadAndRender()" title="从云端加载最新数据">⬇ 加载</button>
+      <button class="cloud-btn" onclick="showSnapshotModal()" title="保存命名快照">📸 快照</button>
+      <button class="cloud-btn" onclick="showTokenModal()" title="云端同步设置">⚙ 设置</button>
+    </div>
+    <button class="btn" onclick="exportData()">导出 JSON</button>
+    <label class="btn" style="margin:0;">
+      导入 JSON
+      <input type="file" accept=".json" style="display:none;" onchange="importData(event)">
+    </label>
+  </div>
+</div>
+
+<div class="tabs" id="tabs">
+  <button class="tab active" data-tab="instr">使用说明</button>
+  <button class="tab" data-tab="dashboard">仓位看板</button>
+  <button class="tab" data-tab="bayesian">贝叶斯更新/凯利仓位记录表</button>
+  <button class="tab" data-tab="quotes">实时行情</button>
+  <button class="tab" data-tab="kelly">凯利速算器</button>
+  <button class="tab" data-tab="notes">补充说明</button>
+</div>
+
+<div class="content">
+
+  <!-- 使用说明 -->
+  <div class="panel active" id="panel-instr">
+    <div class="card">
+      <div class="card-title">工作表结构</div>
+      <div class="instr-panel">
+        <ul>
+          <li><b>仓位看板</b>：汇总各标的当前先验/后验概率、建议凯利仓位，自动从各标的记录表最新一行取数，无需手动同步。</li>
+          <li><b>贝叶斯更新/凯利仓位记录表</b>：各标的的贝叶斯更新记录表，每次财报或重大事件发布后新增一行。标的列表可动态增删——点击「+ 新增股票表」添加新标的，点击「🗑 删除此表」移除不再关注的标的。股票名称可直接点击修改。</li>
+          <li><b>凯利速算器</b>：独立的 what-if 速算区，输入概率和赔率即可即时看仓位建议，不影响正式记录。</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">每次更新时怎么填（以记录表的一行为例）</div>
+      <div class="instr-panel">
+        <ol>
+          <li><b>日期、触发事件</b>：填写财报/公告发布日期与关键内容摘要。</li>
+          <li><b>更新前先验概率</b>：这次更新前你对"该标的分红/基本面判断成立"的信念强度（0-100%）。首次记录可设为50%（中性）或参考历史信息设定。</li>
+          <li><b>似然比 L</b>：新数据在"判断成立"世界里出现的概率 ÷ 在"判断不成立"世界里出现的概率。L&gt;1代表数据支持你的判断，L&lt;1代表数据反对，L=1代表数据不提供信息增量。这是最需要主观判断的输入，建议提前写好判定标准再看数据，避免事后合理化。</li>
+          <li><b>后验概率</b>：自动计算，公式为 <code>后验 = (L×先验) / (L×先验 + (1-先验))</code></li>
+          <li><b>预期上行% / 预期下行%</b>：情景判断下的收益/亏损空间估计（如PB修复空间 vs 继续下跌空间）。</li>
+          <li><b>赔率b、全凯利f*、1/2凯利、1/4凯利</b>：自动计算。<code>f* = (b×p - q) / b</code>，其中 p=后验概率，q=1-p。</li>
+        </ol>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">为什么要打折用分数凯利，而不是全凯利</div>
+      <div class="instr-panel">
+        <p>全凯利假设 p 和 b 是精确已知的概率参数，但实际上这些都是你的主观估计，存在误差。凯利公式对估计误差高度敏感——参数稍微高估，全仓位建议就可能大幅偏激进。分数凯利（1/4～1/2）用较低的长期增长率换取大幅降低的破产/深度回撤风险，是实务中更稳健的做法，尤其适合单一标的、样本量有限的低频决策场景。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">重要提醒（务必阅读）</div>
+      <div class="instr-panel">
+        <ol>
+          <li>本工作表是决策辅助计算器，不构成投资建议。所有先验概率、似然比、预期收益/亏损都是主观估计，计算结果的可靠性完全取决于输入判断的质量。</li>
+          <li>凯利公式假设可重复的独立押注；但你对单一标的的一次性判断本质上是小样本事件，公式结果应视为仓位"参考上限"而非精确解。</li>
+          <li>多标的组合仓位不能简单相加。各标的之间可能存在行业/系统性相关性（如白酒板块同涨同跌、银行与大盘系统性风险相关），并非真正独立。建议在单标的凯利仓位基础上，再叠加一层组合集中度折扣。</li>
+          <li>贝叶斯更新最怕先验锚定和确认偏误：建议在看到新财报前，先把先验概率和似然比判定标准写下来，再对照数据打分，而不是看完数据后回头找理由。</li>
+        </ol>
+        <div class="blue-note">💡 <b>蓝色背景</b> = 需要你手动填写的输入；<b>灰色背景</b> = 自动计算的公式，不要手动覆盖。</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">版本回溯：Git 历史 + 命名快照</div>
+      <div class="instr-panel">
+        <p>本工具采用双层版本回溯策略，确保数据安全可追溯：</p>
+        <ul>
+          <li><b>Git 历史（自动）</b>：每次云端保存都会产生一个 Git commit，可在 GitHub 仓库查看完整变更历史。无需手动操作。</li>
+          <li><b>命名快照（手动）</b>：点击顶栏「📸 快照」按钮，为当前数据打上命名标签（如"Q2财报前"）。适用于关键时点标记，方便随时回溯到某个里程碑状态。快照独立存储，不影响主数据；恢复后需手动保存才会写入主数据。</li>
+        </ul>
+        <div class="blue-note">💡 无 Token 时快照存储在浏览器本地；连接云端后快照保存至**目录。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 仓位看板 -->
+  <div class="panel" id="panel-dashboard">
+    <div class="card">
+      <div class="card-title">仓位看板 — 自动汇总各标的最新一次贝叶斯更新与凯利仓位建议</div>
+      <div class="table-wrap">
+        <table class="dashboard-table" id="dash-table">
+          <thead>
+            <tr>
+              <th>标的</th>
+              <th>最新更新日期</th>
+              <th>最新触发事件</th>
+              <th>最新后验概率</th>
+              <th>赔率 b</th>
+              <th>1/2凯利建议仓位</th>
+              <th>1/4凯利建议仓位</th>
+              <th>下一验证节点（手动填写）</th>
+            </tr>
+          </thead>
+          <tbody id="dash-tbody"></tbody>
+        </table>
+      </div>
+      <div class="dash-tip">⚠️ 组合层面请勿将各标的建议仓位直接相加——标的之间存在行业/系统性相关性，务必叠加集中度折扣后再决定实际总仓位。</div>
+    </div>
+  </div>
+
+  <!-- 贝叶斯更新/凯利仓位记录表（合并） -->
+  <div class="panel" id="panel-bayesian">
+    <div class="card">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>贝叶斯更新 / 凯利仓位记录表</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="new-stock-name" placeholder="股票名称（如 贵州茅台）" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:200px;font-family:inherit;">
+          <button class="btn btn-primary btn-sm" onclick="addStock()">+ 新增股票表</button>
+        </div>
+      </div>
+    </div>
+    <div id="bayesian-stocks-container"></div>
+  </div>
+
+  <!-- 实时行情 + 投资纪律 -->
+  <div class="panel" id="panel-quotes">
+    <div class="card">
+      <div class="card-title">实时行情 — A股数据（腾讯财经接口）</div>
+      <div class="quote-toolbar">
+        <input type="text" id="quote-add-input" placeholder="输入6位股票代码如 000001" onkeydown="if(event.key==='Enter')addQuoteCode()">
+        <button class="btn btn-primary btn-sm" onclick="addQuoteCode()">添加</button>
+        <button class="btn btn-sm" onclick="fetchQuotes()">手动刷新</button>
+        <button class="btn btn-sm" id="auto-refresh-btn" onclick="toggleAutoRefresh()">自动刷新：开</button>
+        <span class="info">行情非交易时间为上一交易日收盘数据</span>
+      </div>
+      <div class="table-wrap">
+        <table class="quote-table" id="quote-table">
+          <thead>
+            <tr>
+              <th>代码</th>
+              <th>市场</th>
+              <th>名称</th>
+              <th>最新价</th>
+              <th>涨跌幅</th>
+              <th>涨跌额</th>
+              <th>开盘</th>
+              <th>最高</th>
+              <th>最低</th>
+              <th>成交量(手)</th>
+              <th>成交额(万)</th>
+              <th>昨收</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="quote-tbody">
+            <tr><td colspan="13" style="text-align:center;color:var(--text-muted);padding:20px;">点击「手动刷新」获取数据</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="quote-status">
+        <span class="dot" id="quote-dot"></span>
+        <span id="quote-status-text">等待刷新</span>
+      </div>
+
+      <!-- 基本面数据 -->
+      <div class="fund-section">
+        <div class="fund-header" onclick="toggleFundamental()">
+          <span class="card-title">基本面数据 — 市值 · 估值 · 财务 · 分红 · 仓位</span>
+          <span class="fund-toggle collapsed" id="fund-toggle"></span>
+          <button class="btn btn-sm" onclick="event.stopPropagation();fetchFundamentals()">刷新基本面</button>
+          <button class="btn btn-sm" onclick="event.stopPropagation();exportFundEdits()">导出填写数据</button>
+          <label class="btn btn-sm" style="margin:0;cursor:pointer;" onclick="event.stopPropagation();">
+            导入填写数据
+            <input type="file" accept=".json" style="display:none;" onchange="importFundEdits(event)">
+          </label>
+          <span class="info">黄底单元格可编辑，自动保存 · 可导出/导入备份</span>
+        </div>
+        <div id="fund-content" style="display:none;">
+          <div class="table-wrap">
+            <table class="fund-table" id="fund-table">
+              <thead id="fund-thead"></thead>
+              <tbody id="fund-tbody">
+                <tr><td colspan="21" style="text-align:center;color:var(--text-muted);padding:20px;">点击「刷新基本面」获取数据</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="fund-status">
+            <span class="dot off" id="fund-dot"></span>
+            <span id="fund-status-text">等待刷新</span>
+          </div>
+
+          <!-- 组合估值 -->
+          <div class="portfolio-val" id="portfolio-val-section" style="display:none;">
+            <div class="portfolio-val-title">组合估值（按持仓权重加权）</div>
+            <div class="portfolio-val-hint" id="portfolio-val-hint"></div>
+            <table class="portfolio-val-table">
+              <thead>
+                <tr>
+                  <th>PE(TTM)</th>
+                  <th>PB</th>
+                  <th>PCF(TTM)</th>
+                  <th>自由现金流率</th>
+                  <th>股息率</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr id="portfolio-val-row">
+                  <td id="pv-pe">—</td>
+                  <td id="pv-pb">—</td>
+                  <td id="pv-pcf">—</td>
+                  <td id="pv-fcf">—</td>
+                  <td id="pv-div">—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 投资纪律与心理自评系统 -->
+    <div class="discipline-panel">
+      <div class="discipline-body">
+        <div class="card-title" style="margin-bottom:10px;">投资纪律与心理自评</div>
+        <div class="discipline-tabs">
+          <button class="discipline-tab active" onclick="switchDisciplineTab(this,'dec-log')">决策日志</button>
+          <button class="discipline-tab" onclick="switchDisciplineTab(this,'questionnaire')">本期自评</button>
+          <button class="discipline-tab" onclick="switchDisciplineTab(this,'history')">历史趋势</button>
+        </div>
+
+        <!-- 决策日志 -->
+        <div class="discipline-section active" id="disc-dec-log">
+          <div style="margin-bottom:8px;">
+            <button class="btn btn-sm btn-primary" onclick="addDecLogRow()">+ 新增决策记录</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="dec-log-table" id="dec-log-table">
+              <thead>
+                <tr>
+                  <th>日期</th>
+                  <th>标的</th>
+                  <th>决策内容</th>
+                  <th>决策依据</th>
+                  <th>情绪<br>(1-5)</th>
+                  <th>预期结果</th>
+                  <th>实际结果</th>
+                  <th>复盘备注</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="dec-log-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 本期自评问卷 -->
+        <div class="discipline-section" id="disc-questionnaire">
+          <div class="quest-period">
+            评估期间: <input type="text" id="quest-period-input" placeholder="如 2026Q3" oninput="saveQuestData()">
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="quest-table" id="quest-table">
+              <thead>
+                <tr>
+                  <th>维度</th>
+                  <th>权重</th>
+                  <th>#</th>
+                  <th>问题</th>
+                  <th>得分(1-5)</th>
+                </tr>
+              </thead>
+              <tbody id="quest-tbody"></tbody>
+            </table>
+          </div>
+          <div class="quest-summary" id="quest-summary"></div>
+        </div>
+
+        <!-- 历史趋势 -->
+        <div class="discipline-section" id="disc-history">
+          <div style="margin-bottom:8px;">
+            <button class="btn btn-sm btn-primary" onclick="addHistRow()">+ 存档本期</button>
+            <span class="info" style="font-size:11px;">将当期问卷结果存档为新行，积累历史序列</span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="hist-table" id="hist-table">
+              <thead>
+                <tr>
+                  <th>期间</th>
+                  <th>纪律执行</th>
+                  <th>情绪状态</th>
+                  <th>认知偏误</th>
+                  <th>知行一致性</th>
+                  <th>加权总分</th>
+                  <th>状态</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="hist-tbody"></tbody>
+            </table>
+          </div>
+          <svg class="hist-chart" id="hist-chart"></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- 控制人性量化评估 -->
+    <div class="discipline-panel" style="margin-top:20px;">
+      <div class="discipline-body">
+        <div class="card-title" style="margin-bottom:10px;">控制人性量化评估 — 价值投资"知行合一"自评</div>
+        <div style="overflow-x:auto;">
+          <table class="quest-table" id="mindset-table">
+            <thead>
+              <tr>
+                <th style="width:36px;">#</th>
+                <th style="min-width:100px;">评估维度</th>
+                <th style="min-width:400px;">核心审计问题</th>
+                <th style="width:80px;">自评分数<br>(1-5)</th>
+                <th style="width:120px;">诊断状态</th>
+              </tr>
+            </thead>
+            <tbody id="mindset-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="mindset-summary" id="mindset-summary" style="margin-top:12px;"></div>
+
+        <!-- 底层理论与落地铁律 -->
+        <div style="margin-top:20px;">
+          <div class="card-title" style="font-size:14px;margin-bottom:8px;">底层理论与落地铁律</div>
+          <div style="overflow-x:auto;">
+            <table class="quest-table" id="mindset-theory-table">
+              <thead>
+                <tr>
+                  <th style="width:36px;">#</th>
+                  <th style="min-width:120px;">核心理论/机制</th>
+                  <th style="min-width:300px;">行为经济学/心理学释义</th>
+                  <th style="min-width:100px;">对应量化测评项</th>
+                  <th style="min-width:300px;">日常践行刚性硬约束</th>
+                </tr>
+              </thead>
+              <tbody id="mindset-theory-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 凯利速算器 -->
+  <div class="panel" id="panel-kelly">
+    <div class="card">
+      <div class="card-title">凯利速算器 — 快速 what-if 测算，不写入正式记录</div>
+      <div class="kelly-calc">
+        <label>后验概率 p</label>
+        <input type="number" step="0.01" min="0" max="1" id="k-p" value="0.6" oninput="calcKelly()">
+        <span class="hint">你对判断成立的信念强度（可直接从看板复制）</span>
+
+        <label>预期上行空间%</label>
+        <input type="number" step="0.01" id="k-up" value="0.30" oninput="calcKelly()">
+        <span class="hint">情景判断下的收益空间</span>
+
+        <label>预期下行风险%</label>
+        <input type="number" step="0.01" id="k-down" value="0.15" oninput="calcKelly()">
+        <span class="hint">情景判断下的亏损空间</span>
+
+        <div style="height:8px;"></div>
+
+        <label>赔率 b <span style="font-size:11px;color:var(--warn);font-weight:400;">（可手动修改）</span></label>
+        <input type="number" step="0.01" id="k-b" oninput="calcKellyFromB()" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px;background:#fef3c7;font-family:inherit;font-weight:600;color:var(--primary);">
+        <span class="hint">默认 = 上行 / 下行，可手动覆盖</span>
+
+        <label>全凯利 f*</label>
+        <input type="text" id="k-f" class="calc-row" readonly>
+        <span class="hint">f* = (b×p - (1-p)) / b</span>
+
+        <label>1/2 凯利建议仓位</label>
+        <input type="text" id="k-half" class="calc-row" readonly>
+        <span class="hint">max(f*×0.5, 0)</span>
+
+        <label>1/3 凯利建议仓位</label>
+        <input type="text" id="k-third" class="calc-row" readonly>
+        <span class="hint">max(f*×(1/3), 0)</span>
+
+        <label>1/4 凯利建议仓位</label>
+        <input type="text" id="k-quarter" class="calc-row" readonly>
+        <span class="hint">max(f*×0.25, 0)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 补充说明 -->
+  <div class="panel" id="panel-notes">
+    <div class="card">
+      <div class="card-title">补充说明 — 三大核心组件角色定位</div>
+      <p style="margin-bottom:12px;">在量化投资中，这三个工具分别扮演了资产库、指挥官和兵力分配器的角色：</p>
+      <div class="table-actions">
+        <div class="left">
+          <span class="info">所有单元格均可直接点击编辑</span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="role-table" id="notes-role-table">
+          <thead>
+            <tr>
+              <th contenteditable="true" data-notes="h0">核心组件</th>
+              <th contenteditable="true" data-notes="h1">扮演角色</th>
+              <th contenteditable="true" data-notes="h2">核心解决问题</th>
+              <th contenteditable="true" data-notes="h3">具体因子</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td contenteditable="true" data-notes="r0c0"><b>高股息策略</b></td>
+              <td contenteditable="true" data-notes="r0c1">底层资产库 (Alpha源)</td>
+              <td contenteditable="true" data-notes="r0c2">解决"买什么"的问题。过滤掉高估值、高投机资产，锁定具有稳定现金流和高安全边际的标的。</td>
+              <td contenteditable="true" data-notes="r0c3">静态股息率，动态股息率；股利支付率，现金率健康度（经营现金流净额/净利润、自由现金流率等），盈利成长性，高分红动机（大股东持股集中度、历史分红惯例）</td>
+            </tr>
+            <tr>
+              <td contenteditable="true" data-notes="r1c0"><b>贝叶斯定理</b></td>
+              <td contenteditable="true" data-notes="r1c1">动态概率引擎</td>
+              <td contenteditable="true" data-notes="r1c2">解决"胜率多大"的问题。随着季报、宏观数据的披露，动态更新标的"维持高股息"或"股价上涨"的后验概率。</td>
+              <td contenteditable="true" data-notes="r1c3">—</td>
+            </tr>
+            <tr>
+              <td contenteditable="true" data-notes="r2c0"><b>凯利公式</b></td>
+              <td contenteditable="true" data-notes="r2c1">资金分配器 (Risk Control)</td>
+              <td contenteditable="true" data-notes="r2c2">解决"买多少"的问题。基于贝叶斯输出的胜率和历史波动的赔率，计算出长期对数收益率最大化的最优仓位。</td>
+              <td contenteditable="true" data-notes="r2c3">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Token Modal -->
+<div class="token-modal" id="token-modal">
+  <div class="token-modal-box">
+    <h3>☁️ 云端同步设置</h3>
+    <p>输入 GitHub Personal Access Token (PAT) 以启用跨设备数据同步。Token 仅存储在当前浏览器本地，不会上传到任何服务器。</p>
+    <div class="token-modal-detail">
+      <b>获取 Token 步骤：</b>
+      <ol>
+        <li>打开 <a href="https://github.com/settings/tokens?type=beta" target="_blank">GitHub Settings → Personal access tokens → Fine-grained</a></li>
+        <li>点击 <b>Generate new token</b></li>
+        <li>Token name 随意填（如 <code>portfolio-sync</code>），Expiration 选 <code>No expiration</code> 或一年</li>
+        <li><b>Repository access</b> → 选 <code>Only select repositories</code> → 选 <code>High-Dividend-Strategy</code></li>
+        <li><b>Permissions</b> → Repository permissions → <code>Contents</code> → 选 <b>Read and write</b></li>
+        <li>点击 <b>Generate token</b>，复制生成的 token 粘贴到下方</li>
+      </ol>
+    </div>
+    <input type="password" id="token-input" placeholder="github_pat_xxxx..." autocomplete="off">
+    <div class="token-modal-actions">
+      <button class="btn btn-danger" onclick="clearTokenFromModal()">清除 Token</button>
+      <button class="btn" onclick="hideTokenModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveTokenFromModal()">保存并连接</button>
+    </div>
+  </div>
+</div>
+
+<!-- Snapshot Modal -->
+<div class="snapshot-modal" id="snapshot-modal">
+  <div class="snapshot-modal-box">
+    <h3>📸 命名快照</h3>
+    <p>保存当前所有数据的命名快照（如"Q2财报前"），用于关键时点标记。快照独立存储，不影响主数据。恢复后需手动保存才会写入主数据。</p>
+    <input type="text" id="snapshot-label" placeholder="如：Q2财报前" autocomplete="off">
+    <div class="snapshot-actions">
+      <button class="btn" onclick="closeSnapshotModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveSnapshot()">保存快照</button>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+    <label style="font-size:13px;font-weight:600;color:var(--text);">历史快照</label>
+    <div class="snapshot-list" id="snapshot-list">
+      <div class="empty-hint">加载中...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ Data Model ============
+// Stock list is dynamic — stored in DATA.stockOrder + DATA.stockNames
+// These are just defaults for first-time users
+const DEFAULT_STOCK_ORDER = ['zhoudasheng','luzhoulaojiao','wuliangye','pinganyinhang'];
+const DEFAULT_STOCK_NAMES = {
+  zhoudasheng: '周大生',
+  luzhoulaojiao: '泸州老窖',
+  wuliangye: '五粮液',
+  pinganyinhang: '平安银行'
+};
+
+// Get current stock keys/names from DATA (dynamic)
+function getStockKeys() {
+  if (DATA.stockOrder && DATA.stockOrder.length > 0) return DATA.stockOrder;
+  // Fallback: infer from data keys that have .rows
+  const inferred = Object.keys(DATA).filter(k => DATA[k] && typeof DATA[k] === 'object' && 'rows' in DATA[k]);
+  if (inferred.length > 0) return inferred;
+  return DEFAULT_STOCK_ORDER.slice();
+}
+function getStockName(key) {
+  return (DATA.stockNames && DATA.stockNames[key]) || key;
+}
+
+// Default data from xlsx
+const DEFAULT_DATA = {
+  stockOrder: ['zhoudasheng','luzhoulaojiao','wuliangye','pinganyinhang'],
+  stockNames: {
+    zhoudasheng: '周大生',
+    luzhoulaojiao: '泸州老窖',
+    wuliangye: '五粮液',
+    pinganyinhang: '平安银行'
+  },
+  zhoudasheng: {
+    nextCheck: '下一次现金流/中报数据',
+    rows: [
+      { date:'2026-04-29', event:'2025年报+2026Q1：净利润11.03亿(+9.2%)但经营现金流转负(-1.77亿)，派息率88.5%已超母公司净利润', prior:0.5, lr:0.6, up:0.15, down:0.25, note:'现金流与利润背离是核心风险点；派息率远超可持续水平，等待下一期现金流数据验证是否改善' }
+    ]
+  },
+  luzhoulaojiao: {
+    nextCheck: '下一次财报（关注渠道去库存进度）',
+    rows: [
+      { date:'2026-06-01', event:'白酒行业出清周期分析（对标煤炭2016年供给侧出清），示例基线行，无强制出清机制，底部可能拉长', prior:0.45, lr:1.0, up:0.30, down:0.20, note:'此行为基线示例，L=1.0表示尚无新增证据；建议下次财报后作为第一条正式记录并重新设定似然比' }
+    ]
+  },
+  wuliangye: {
+    nextCheck: '下一次财报',
+    rows: [
+      { date:'', event:'（尚无记录，请在下次财报/公告发布后填写第一行）', prior:'', lr:'', up:'', down:'', note:'' }
+    ]
+  },
+  pinganyinhang: {
+    nextCheck: '2026-08-14 中报',
+    rows: [
+      { date:'2026-04-15', event:'2026Q1单季度：营收+4.7%，净利润+3.0%，多年零售信贷质量恶化后首次转正（日期为季报披露期近似值，请核对交易所公告日）', prior:0.4, lr:1.5, up:0.40, down:0.15, note:'8月14日中报为关键验证节点：若中报延续或加速改善，似然比应显著上调；若增速回落或不良率反弹，似然比应下调至1以下' }
+    ]
+  },
+  kelly: { p:0.6, up:0.30, down:0.15, b:2 }
+};
+
+// ============ Storage ============
+const STORAGE_KEY = 'portfolio_framework_v1';
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Migration: ensure stockOrder and stockNames exist and are consistent
+      if (!parsed.stockOrder || !Array.isArray(parsed.stockOrder) || parsed.stockOrder.length === 0) {
+        parsed.stockOrder = Object.keys(parsed).filter(k => parsed[k] && typeof parsed[k] === 'object' && 'rows' in parsed[k]);
+        if (parsed.stockOrder.length === 0) parsed.stockOrder = DEFAULT_STOCK_ORDER.slice();
+      }
+      if (!parsed.stockNames) {
+        parsed.stockNames = {};
+      }
+      parsed.stockOrder.forEach(k => {
+        if (!parsed.stockNames[k]) parsed.stockNames[k] = DEFAULT_STOCK_NAMES[k] || k;
+      });
+      return parsed;
+    }
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+}
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
+  scheduleCloudSync();
+}
+let DATA = loadData();
+
+// ============ Helpers ============
+function fmtPct(v) {
+  if (v === '' || v === null || v === undefined || isNaN(v)) return '';
+  const n = parseFloat(v);
+  if (isNaN(n)) return '';
+  return (n * 100).toFixed(1) + '%';
+}
+function fmtNum(v, digits=4) {
+  if (v === '' || v === null || v === undefined || isNaN(v)) return '';
+  return parseFloat(v).toFixed(digits);
+}
+// Parse number from input — accepts "0.3", "30%", "2/3"
+function parseNum(v) {
+  if (v === '' || v === null || v === undefined) return NaN;
+  let s = String(v).trim();
+  if (s === '') return NaN;
+  let pct = false;
+  if (s.endsWith('%')) { pct = true; s = s.slice(0, -1).trim(); }
+  if (s.includes('/')) {
+    const parts = s.split('/');
+    if (parts.length === 2) {
+      const num = parseFloat(parts[0]);
+      const den = parseFloat(parts[1]);
+      if (!isNaN(num) && !isNaN(den) && den !== 0) return num / den;
+    }
+  }
+  let n = parseFloat(s);
+  if (isNaN(n)) return NaN;
+  if (pct) return n / 100;
+  return n;
+}
+// Parse probability — accepts "0.667", "66.7%", "66.7" (auto-convert >1 to fraction)
+function parseProb(v) {
+  const n = parseNum(v);
+  if (isNaN(n)) return NaN;
+  if (n > 1 && n <= 100) return n / 100;
+  return n;
+}
+// Bayesian posterior: E = (L*C)/(L*C + (1-C))
+function bayesPosterior(prior, lr) {
+  const c = parseProb(prior), d = parseNum(lr);
+  if (isNaN(c) || isNaN(d) || c < 0 || c > 1) return '';
+  const denom = d * c + (1 - c);
+  if (denom === 0) return '';
+  return (d * c) / denom;
+}
+// Odds: b = up/down
+function calcOdds(up, down) {
+  const f = parseNum(up), g = parseNum(down);
+  if (isNaN(f) || isNaN(g) || g === 0) return '';
+  return f / g;
+}
+// Full Kelly: f* = (b*p - (1-p)) / b
+function fullKelly(b, p) {
+  const bv = parseFloat(b), pv = parseFloat(p);
+  if (isNaN(bv) || isNaN(pv) || bv === 0) return '';
+  return (bv * pv - (1 - pv)) / bv;
+}
+function halfKelly(f) { const v=parseFloat(f); return isNaN(v)?'':Math.max(v*0.5,0); }
+function quarterKelly(f){ const v=parseFloat(f); return isNaN(v)?'':Math.max(v*0.25,0); }
+function thirdKelly(f){ const v=parseFloat(f); return isNaN(v)?'':Math.max(v*(1/3),0); }
+
+// ============ Tab Switching ============
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'dashboard') renderDashboard();
+  });
+});
+
+// ============ Stock Record Tables ============
+const STOCK_HEADERS = [
+  { key:'date', label:'日期', input:true, width:110 },
+  { key:'event', label:'触发事件/数据来源', input:true, width:280, textarea:true },
+  { key:'prior', label:'更新前先验概率\nP(判断成立)', input:true, width:100 },
+  { key:'lr', label:'似然比 L', input:true, width:80 },
+  { key:'posterior', label:'后验概率\n(自动计算)', input:false, width:100 },
+  { key:'up', label:'预期上行空间%', input:true, width:90 },
+  { key:'down', label:'预期下行风险%', input:true, width:90 },
+  { key:'odds', label:'赔率 b\n(自动计算)', input:false, width:80 },
+  { key:'fullKelly', label:'全凯利 f*\n(自动计算)', input:false, width:90 },
+  { key:'halfKelly', label:'1/2凯利建议仓位\n(自动计算)', input:false, width:100 },
+  { key:'quarterKelly', label:'1/4凯利建议仓位\n(自动计算)', input:false, width:100 },
+  { key:'note', label:'备注', input:true, width:200, textarea:true }
+];
+
+function renderStockTable(key) {
+  const stockData = DATA[key];
+  if (!stockData) return;
+  const container = document.getElementById('bayesian-stocks-container');
+  if (!container) return;
+  const name = getStockName(key);
+
+  // Check if this stock's card already exists
+  let card = document.getElementById('bayesian-card-' + key);
+
+  let html = `<div class="card" id="bayesian-card-${key}">
+    <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;">
+        <input type="text" value="${name}" style="font-size:16px;font-weight:600;border:1px solid var(--border);border-radius:6px;padding:4px 10px;width:200px;font-family:inherit;" onchange="renameStock('${key}', this.value)" title="点击修改股票名称">
+        <span style="color:var(--text-muted);font-size:13px;font-weight:400;">— 贝叶斯更新 / 凯利仓位记录表</span>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteStock('${key}')" title="删除整只股票的记录表">🗑 删除此表</button>
+    </div>
+    <div class="table-actions">
+      <div class="left">
+        <button class="btn btn-primary btn-sm" onclick="addRow('${key}')">+ 新增一行</button>
+        <span class="info">蓝色 = 手动填写 · 灰色 = 自动计算 · 先验概率支持 0.6 / 60% / 60 格式</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="record">
+        <thead><tr>
+          <th style="width:36px;">#</th>`;
+  STOCK_HEADERS.forEach(h => {
+    html += `<th style="min-width:${h.width}px;">${h.label}${h.input?'':'<span class="auto-tag">自动</span>'}</th>`;
+  });
+  html += `<th style="width:50px;">操作</th>`;
+  html += `</tr></thead><tbody id="tbody-${key}">`;
+
+  stockData.rows.forEach((row, i) => {
+    html += renderStockRow(key, row, i);
+  });
+
+  html += `</tbody></table>
+    </div>
+    <div class="table-actions">
+      <div class="left">
+        <button class="btn btn-primary btn-sm" onclick="addRow('${key}')">+ 新增一行</button>
+      </div>
+    </div>
+    <div style="margin-top:12px;">
+      <label style="font-size:13px;font-weight:500;">下一验证节点（手动填写）：</label>
+      <input type="text" value="${stockData.nextCheck||''}" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;width:300px;font-size:13px;font-family:inherit;" onchange="updateNextCheck('${key}', this.value)">
+    </div>
+  </div>`;
+
+  if (card) {
+    // Update existing card
+    card.outerHTML = html;
+  } else {
+    // Append new card
+    container.insertAdjacentHTML('beforeend', html);
+  }
+}
+
+// Render all stock tables
+function renderAllStockTables() {
+  const container = document.getElementById('bayesian-stocks-container');
+  if (!container) return;
+  container.innerHTML = '';
+  getStockKeys().forEach(key => renderStockTable(key));
+}
+
+// Add a new stock
+function addStock() {
+  const nameInput = document.getElementById('new-stock-name');
+  const name = nameInput.value.trim();
+  if (!name) {
+    alert('请输入股票名称');
+    nameInput.focus();
+    return;
+  }
+  // Generate a unique key from name (pinyin-like fallback)
+  let key = 's_' + Date.now().toString(36);
+  // Ensure uniqueness
+  while (DATA[key]) key = 's_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+
+  DATA[key] = { nextCheck: '', rows: [{ date:'', event:'', prior:'', lr:'', up:'', down:'', note:'' }] };
+  if (!DATA.stockOrder) DATA.stockOrder = [];
+  if (!DATA.stockNames) DATA.stockNames = {};
+  DATA.stockOrder.push(key);
+  DATA.stockNames[key] = name;
+
+  saveData();
+  renderStockTable(key);
+  nameInput.value = '';
+  // Re-render dashboard if visible
+  if (document.getElementById('panel-dashboard').classList.contains('active')) {
+    renderDashboard();
+  }
+}
+
+// Delete a stock
+function deleteStock(key) {
+  const name = getStockName(key);
+  // Safety: prevent deleting if only 1 stock left
+  const currentKeys = getStockKeys();
+  if (currentKeys.length <= 1) {
+    alert('至少保留一只股票的记录表，无法删除最后一只。');
+    return;
+  }
+  if (!confirm('确认删除「' + name + '」的整张记录表？\n\n该股票的所有贝叶斯更新记录将永久删除。')) return;
+  // Remove from stockOrder
+  if (!DATA.stockOrder) DATA.stockOrder = getStockKeys();
+  DATA.stockOrder = DATA.stockOrder.filter(k => k !== key);
+  // Remove from stockNames
+  if (!DATA.stockNames) DATA.stockNames = {};
+  delete DATA.stockNames[key];
+  // Remove the data
+  delete DATA[key];
+  saveData();
+  renderAllStockTables();
+  // Re-render dashboard if visible
+  if (document.getElementById('panel-dashboard').classList.contains('active')) {
+    renderDashboard();
+  }
+}
+
+// Rename a stock
+function renameStock(key, newName) {
+  if (!newName.trim()) return; // Don't allow empty names
+  if (!DATA.stockNames) DATA.stockNames = {};
+  DATA.stockNames[key] = newName.trim();
+  saveData();
+  // Re-render dashboard if visible
+  if (document.getElementById('panel-dashboard').classList.contains('active')) {
+    renderDashboard();
+  }
+}
+
+function renderStockRow(key, row, i) {
+  const posterior = bayesPosterior(row.prior, row.lr);
+  const odds = calcOdds(row.up, row.down);
+  const fk = fullKelly(odds, posterior);
+  const hk = halfKelly(fk);
+  const qk = quarterKelly(fk);
+
+  let html = `<tr class="${row.date||row.event||row.prior?'':'row-empty'}">
+    <td class="row-num">${i+1}</td>`;
+  STOCK_HEADERS.forEach(h => {
+    if (h.input) {
+      const val = row[h.key] !== undefined ? row[h.key] : '';
+      if (h.textarea) {
+        html += `<td><textarea rows="2" oninput="updateCell('${key}',${i},'${h.key}',this.value)" placeholder="${h.label}">${val}</textarea></td>`;
+      } else {
+        html += `<td><input type="text" value="${val}" oninput="updateCell('${key}',${i},'${h.key}',this.value)" placeholder="${h.label}"></td>`;
+      }
+    } else {
+      let displayVal = '';
+      if (h.key === 'posterior') displayVal = fmtPct(posterior);
+      else if (h.key === 'odds') displayVal = fmtNum(odds, 2);
+      else if (h.key === 'fullKelly') displayVal = fmtPct(fk);
+      else if (h.key === 'halfKelly') displayVal = fmtPct(hk);
+      else if (h.key === 'quarterKelly') displayVal = fmtPct(qk);
+      html += `<td><span class="calc-cell">${displayVal}</span></td>`;
+    }
+  });
+  html += `<td class="action-cell"><button class="btn btn-sm btn-danger" onclick="deleteRow('${key}',${i})">删</button></td>`;
+  html += `</tr>`;
+  return html;
+}
+
+function updateCell(key, rowIdx, field, value) {
+  DATA[key].rows[rowIdx][field] = value;
+  saveData();
+  // Re-render only the row's calc cells
+  refreshRow(key, rowIdx);
+}
+function refreshRow(key, rowIdx) {
+  const tbody = document.getElementById('tbody-' + key);
+  if (!tbody) return;
+  const row = DATA[key].rows[rowIdx];
+  const tr = tbody.rows[rowIdx];
+  if (!tr) return;
+
+  const posterior = bayesPosterior(row.prior, row.lr);
+  const odds = calcOdds(row.up, row.down);
+  const fk = fullKelly(odds, posterior);
+  const hk = halfKelly(fk);
+  const qk = quarterKelly(fk);
+
+  const calcValues = {
+    posterior: fmtPct(posterior),
+    odds: fmtNum(odds, 2),
+    fullKelly: fmtPct(fk),
+    halfKelly: fmtPct(hk),
+    quarterKelly: fmtPct(qk)
+  };
+
+  // Only update calc-cell spans, leave input elements untouched
+  const cells = tr.querySelectorAll('td');
+  let colIdx = 1; // skip row-num column
+  STOCK_HEADERS.forEach(h => {
+    if (!h.input) {
+      const span = cells[colIdx] && cells[colIdx].querySelector('.calc-cell');
+      if (span) span.textContent = calcValues[h.key] || '';
+    }
+    colIdx++;
+  });
+}
+function addRow(key) {
+  DATA[key].rows.push({ date:'', event:'', prior:'', lr:'', up:'', down:'', note:'' });
+  saveData();
+  renderStockTable(key);
+}
+function deleteRow(key, idx) {
+  if (!confirm('确认删除第 ' + (idx+1) + ' 行？')) return;
+  DATA[key].rows.splice(idx, 1);
+  saveData();
+  renderStockTable(key);
+}
+function updateNextCheck(key, val) {
+  DATA[key].nextCheck = val;
+  saveData();
+}
+
+// ============ Dashboard ============
+function renderDashboard() {
+  const tbody = document.getElementById('dash-tbody');
+  let html = '';
+  getStockKeys().forEach(key => {
+    const stock = DATA[key];
+    if (!stock) return;
+    // Find last row with data
+    let lastRow = null;
+    for (let i = stock.rows.length - 1; i >= 0; i--) {
+      if (stock.rows[i].date || stock.rows[i].event || stock.rows[i].prior) {
+        lastRow = stock.rows[i];
+        break;
+      }
+    }
+    if (lastRow) {
+      const posterior = bayesPosterior(lastRow.prior, lastRow.lr);
+      const odds = calcOdds(lastRow.up, lastRow.down);
+      const fk = fullKelly(odds, posterior);
+      const hk = halfKelly(fk);
+      const qk = quarterKelly(fk);
+      html += `<tr>
+        <td class="name">${getStockName(key)}</td>
+        <td>${lastRow.date || '—'}</td>
+        <td style="text-align:left;font-size:12px;max-width:300px;">${lastRow.event || '—'}</td>
+        <td>${fmtPct(posterior) || '—'}</td>
+        <td>${fmtNum(odds, 2) || '—'}</td>
+        <td>${fmtPct(hk) || '—'}</td>
+        <td>${fmtPct(qk) || '—'}</td>
+        <td><input type="text" value="${stock.nextCheck||''}" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:12px;font-family:inherit;" onchange="updateNextCheck('${key}', this.value);renderDashboard();"></td>
+      </tr>`;
+    } else {
+      html += `<tr>
+        <td class="name">${getStockName(key)}</td>
+        <td colspan="6" style="color:var(--text-muted);">待填写</td>
+        <td><input type="text" value="${stock.nextCheck||''}" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:12px;font-family:inherit;" onchange="updateNextCheck('${key}', this.value);renderDashboard();"></td>
+      </tr>`;
+    }
+  });
+  tbody.innerHTML = html;
+}
+
+// ============ Kelly Calculator ============
+function calcKelly() {
+  // Called when p, up, or down changes — auto-calc b from up/down
+  const up = parseFloat(document.getElementById('k-up').value);
+  const down = parseFloat(document.getElementById('k-down').value);
+  if (!isNaN(up) && !isNaN(down) && down !== 0) {
+    document.getElementById('k-b').value = (up / down).toFixed(2);
+  }
+  calcKellyResults();
+}
+function calcKellyFromB() {
+  // Called when b is manually edited — don't recalc b from up/down
+  calcKellyResults();
+}
+function calcKellyResults() {
+  const p = parseFloat(document.getElementById('k-p').value);
+  const b = parseFloat(document.getElementById('k-b').value);
+
+  const fk = (isNaN(b) || isNaN(p) || b === 0) ? '' : (b * p - (1 - p)) / b;
+  const hk = (fk === '') ? '' : Math.max(fk * 0.5, 0);
+  const tk = (fk === '') ? '' : Math.max(fk * (1/3), 0);
+  const qk = (fk === '') ? '' : Math.max(fk * 0.25, 0);
+
+  document.getElementById('k-f').value = fk === '' ? '—' : fmtPct(fk);
+  document.getElementById('k-half').value = hk === '' ? '—' : fmtPct(hk);
+  document.getElementById('k-third').value = tk === '' ? '—' : fmtPct(tk);
+  document.getElementById('k-quarter').value = qk === '' ? '—' : fmtPct(qk);
+
+  // Save to data
+  DATA.kelly = {
+    p: document.getElementById('k-p').value,
+    up: document.getElementById('k-up').value,
+    down: document.getElementById('k-down').value,
+    b: document.getElementById('k-b').value
+  };
+  saveData();
+}
+
+// ============ Real-time Quotes (Eastmoney JSONP) ============
+const QUOTE_STORE_KEY = 'portfolio_quote_codes';
+const DEFAULT_QUOTE_CODES = ['000001','000568','000858','002867'];
+let quoteCodes = JSON.parse(localStorage.getItem(QUOTE_STORE_KEY) || 'null') || DEFAULT_QUOTE_CODES.slice();
+let autoRefreshTimer = null;
+let autoRefreshOn = false;
+
+function saveQuoteCodes() {
+  localStorage.setItem(QUOTE_STORE_KEY, JSON.stringify(quoteCodes));
+  scheduleCloudSync();
+}
+// Determine market prefix: 0 = Shenzhen, 1 = Shanghai
+function secidFor(code) {
+  code = String(code).trim();
+  if (/^(6|9|7)/.test(code)) return '1.' + code;  // Shanghai
+  return '0.' + code;                               // Shenzhen (000/001/002/003/300/301 etc.)
+}
+function marketLabel(code) {
+  return /^(6|9|7)/.test(code) ? 'SH' : 'SZ';
+}
+// Tencent finance code prefix
+function tencentCode(code) {
+  code = String(code).trim();
+  return /^(6|9|7)/.test(code) ? 'sh' + code : 'sz' + code;
+}
+async function fetchQuotes() {
+  if (quoteCodes.length === 0) {
+    renderQuoteTable([]);
+    setQuoteStatus('无股票代码，请添加', 'off');
+    return;
+  }
+  setQuoteStatus('正在获取行情数据…', 'loading');
+  const codes = quoteCodes.map(tencentCode).join(',');
+  try {
+    const resp = await fetch('https://qt.gtimg.cn/q=' + codes);
+    const buf = await resp.arrayBuffer();
+    const text = new TextDecoder('gbk').decode(buf);
+    const rows = [];
+    text.split(';').forEach(line => {
+      line = line.trim();
+      if (!line) return;
+      const m = line.match(/v_(\w+)="([^"]*)"/);
+      if (!m) return;
+      const parts = m[2].split('~');
+      if (parts.length < 50) return;
+      rows.push({
+        code: parts[2],
+        name: parts[1],
+        price: parseFloat(parts[3]),
+        prevClose: parseFloat(parts[4]),
+        open: parseFloat(parts[5]),
+        vol: parseFloat(parts[6]),         // 手
+        chgAmt: parseFloat(parts[31]),
+        chgPct: parseFloat(parts[32]),
+        high: parseFloat(parts[33]),
+        low: parseFloat(parts[34]),
+        turnover: parseFloat(parts[37])    // 万元
+      });
+    });
+    renderQuoteTable(rows);
+    const now = new Date();
+    setQuoteStatus('最后更新: ' + now.toLocaleString('zh-CN'), 'on');
+  } catch(e) {
+    setQuoteStatus('获取行情数据失败: ' + e.message, 'err');
+  }
+}
+function renderQuoteTable(rows) {
+  const tbody = document.getElementById('quote-tbody');
+  if (!rows || rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--text-muted);padding:20px;">无数据</td></tr>';
+    return;
+  }
+  const map = {};
+  rows.forEach(r => { map[r.code] = r; });
+  let html = '';
+  quoteCodes.forEach(code => {
+    const r = map[code];
+    if (!r) {
+      html += `<tr><td>${code}</td><td>${marketLabel(code)}</td><td colspan="11" style="color:var(--text-muted);">— 无数据</td></tr>`;
+      return;
+    }
+    const name = r.name || '—';
+    const fmt = v => (v === null || v === undefined || isNaN(v)) ? '—' : v;
+    const price = fmt(r.price);
+    const chgPct = fmt(r.chgPct);
+    const chgAmt = fmt(r.chgAmt);
+    const open = fmt(r.open);
+    const high = fmt(r.high);
+    const low = fmt(r.low);
+    const vol = fmt(r.vol);
+    const turnover = fmt(r.turnover);
+    const prevClose = fmt(r.prevClose);
+    let pctCls = 'flat', amtCls = 'flat';
+    if (typeof chgPct === 'number') {
+      if (chgPct > 0) pctCls = 'pos';
+      else if (chgPct < 0) pctCls = 'neg';
+    }
+    if (typeof chgAmt === 'number') {
+      if (chgAmt > 0) amtCls = 'pos';
+      else if (chgAmt < 0) amtCls = 'neg';
+    }
+    const pctStr = (typeof chgPct === 'number') ? (chgPct > 0 ? '+' : '') + chgPct.toFixed(2) + '%' : chgPct;
+    const amtStr = (typeof chgAmt === 'number') ? (chgAmt > 0 ? '+' : '') + chgAmt.toFixed(2) : chgAmt;
+    html += `<tr>
+      <td>${code}</td>
+      <td>${marketLabel(code)}</td>
+      <td>${name}</td>
+      <td>${price}</td>
+      <td class="${pctCls}">${pctStr}</td>
+      <td class="${amtCls}">${amtStr}</td>
+      <td>${open}</td>
+      <td>${high}</td>
+      <td>${low}</td>
+      <td>${vol}</td>
+      <td>${turnover}</td>
+      <td>${prevClose}</td>
+      <td><button class="del-quote" onclick="removeQuoteCode('${code}')" title="删除">×</button></td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+}
+function setQuoteStatus(text, state) {
+  document.getElementById('quote-status-text').textContent = text;
+  const dot = document.getElementById('quote-dot');
+  dot.className = 'dot' + (state === 'off' ? ' off' : state === 'err' ? ' err' : '');
+}
+function addQuoteCode() {
+  const input = document.getElementById('quote-add-input');
+  let code = input.value.trim();
+  if (!/^\d{6}$/.test(code)) {
+    alert('请输入6位数字股票代码');
+    return;
+  }
+  if (quoteCodes.includes(code)) {
+    alert('该代码已存在');
+    return;
+  }
+  quoteCodes.push(code);
+  saveQuoteCodes();
+  input.value = '';
+  fetchQuotes();
+  if (fundExpanded) renderFundTable();
+}
+function removeQuoteCode(code) {
+  quoteCodes = quoteCodes.filter(c => c !== code);
+  delete fundData[code];
+  saveQuoteCodes();
+  fetchQuotes();
+  if (fundExpanded) renderFundTable();
+}
+function toggleAutoRefresh() {
+  autoRefreshOn = !autoRefreshOn;
+  const btn = document.getElementById('auto-refresh-btn');
+  if (autoRefreshOn) {
+    btn.textContent = '自动刷新：开';
+    btn.style.background = 'var(--success)';
+    btn.style.color = '#fff';
+    fetchQuotes();
+    autoRefreshTimer = setInterval(fetchQuotes, 10000);
+  } else {
+    btn.textContent = '自动刷新：关';
+    btn.style.background = '';
+    btn.style.color = '';
+    if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+  }
+}
+
+// ============ Fundamental Data (Eastmoney datacenter) ============
+const FUND_EDIT_KEY = 'portfolio_fund_edits';
+let fundExpanded = false;
+let fundData = {};        // code -> { valuation, finance }
+let fundEdits = {};       // code -> { ocf_ttm, capex_ttm, quasi_cash, static_div, dynamic_div, position }
+
+// Load saved editable values
+function loadFundEdits() {
+  try { fundEdits = JSON.parse(localStorage.getItem(FUND_EDIT_KEY) || '{}'); } catch(e) { fundEdits = {}; }
+}
+function saveFundEdits() {
+  localStorage.setItem(FUND_EDIT_KEY, JSON.stringify(fundEdits));
+  scheduleCloudSync();
+}
+function getFundEdit(code, field) {
+  return (fundEdits[code] && fundEdits[code][field] !== undefined) ? fundEdits[code][field] : '';
+}
+function setFundEdit(code, field, value) {
+  if (!fundEdits[code]) fundEdits[code] = {};
+  fundEdits[code][field] = value;
+  saveFundEdits();
+}
+
+// ---- Export / Import fundEdits (editable cell data) ----
+async function exportFundEdits() {
+  const exportObj = {
+    type: 'fund_edits',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    fundEdits: fundEdits
+  };
+  const jsonStr = JSON.stringify(exportObj, null, 2);
+  const defaultName = 'fund_edits_' + new Date().toISOString().slice(0,10) + '.json';
+
+  // Try File System Access API (shows "Save As" dialog)
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: defaultName,
+        types: [{ description: 'JSON 文件', accept: { 'application/json': ['.json'] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(jsonStr);
+      await writable.close();
+      return;
+    } catch(e) {
+      if (e.name === 'AbortError') return;  // user cancelled
+      // fall through to legacy download
+    }
+  }
+  // Fallback: legacy <a download> + alert
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = defaultName;
+  a.click();
+  URL.revokeObjectURL(url);
+  alert('文件已下载到浏览器默认下载目录，文件名：' + defaultName);
+}
+function importFundEdits(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      let newEdits = null;
+      if (imported.type === 'fund_edits' && imported.fundEdits) {
+        newEdits = imported.fundEdits;
+      } else if (imported.version === 2 && imported.fundEdits) {
+        // from top-level export
+        newEdits = imported.fundEdits;
+      } else {
+        // plain object: treat as direct fundEdits map
+        if (typeof imported === 'object' && !Array.isArray(imported)) {
+          // validate: values should be objects with string fields
+          const valid = Object.values(imported).every(v => typeof v === 'object' && v !== null && !Array.isArray(v));
+          if (valid) newEdits = imported;
+        }
+      }
+      if (!newEdits) throw new Error('format mismatch');
+      // merge: imported overwrites existing
+      fundEdits = Object.assign({}, fundEdits, newEdits);
+      saveFundEdits();
+      if (fundExpanded) renderFundTable();
+      alert('基本面填写数据导入成功！共 ' + Object.keys(newEdits).length + ' 只股票。');
+    } catch(err) {
+      alert('导入失败：文件格式错误（' + err.message + '）');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function toggleFundamental() {
+  fundExpanded = !fundExpanded;
+  const content = document.getElementById('fund-content');
+  const toggle = document.getElementById('fund-toggle');
+  if (fundExpanded) {
+    content.style.display = '';
+    toggle.className = 'fund-toggle expanded';
+    if (Object.keys(fundData).length === 0) fetchFundamentals();
+    else renderFundTable();
+  } else {
+    content.style.display = 'none';
+    toggle.className = 'fund-toggle collapsed';
+  }
+}
+
+function setFundStatus(text, state) {
+  document.getElementById('fund-status-text').textContent = text;
+  const dot = document.getElementById('fund-dot');
+  dot.className = 'dot' + (state === 'off' ? ' off' : state === 'err' ? ' err' : state === 'loading' ? ' loading' : '');
+}
+
+// ---- Valuation: close price, total shares, market cap, PE, PB, PCF (batch) ----
+async function fetchValuation(codes) {
+  if (codes.length === 0) return {};
+  const inList = codes.map(c => '"' + c + '"').join(',');
+  const url = 'https://datacenter-web.eastmoney.com/api/data/v1/get'
+    + '?sortColumns=TRADE_DATE&sortTypes=-1&pageSize=100&pageNumber=1'
+    + '&reportName=RPT_VALUEANALYSIS_DET'
+    + '&columns=SECURITY_CODE,SECURITY_NAME_ABBR,CLOSE_PRICE,TOTAL_MARKET_CAP,TOTAL_SHARES,PE_TTM,PB_MRQ,PCF_OCF_TTM,TRADE_DATE'
+    + '&filter=(SECURITY_CODE in(' + inList + '))';
+  const resp = await fetch(url);
+  const data = await resp.json();
+  if (!data.success || !data.result) return {};
+  const map = {};
+  data.result.data.forEach(r => {
+    if (!map[r.SECURITY_CODE] || new Date(r.TRADE_DATE) > new Date(map[r.SECURITY_CODE].TRADE_DATE)) {
+      map[r.SECURITY_CODE] = r;
+    }
+  });
+  return map;
+}
+
+// ---- Finance: report date, total liability, parent net profit (per code) ----
+async function fetchFinance(code) {
+  const url = 'https://datacenter-web.eastmoney.com/api/data/v1/get'
+    + '?sortColumns=REPORT_DATE&sortTypes=-1&pageSize=1&pageNumber=1'
+    + '&reportName=RPT_F10_FINANCE_MAINFINADATA'
+    + '&columns=SECURITY_CODE,SECURITY_NAME_ABBR,REPORT_DATE,REPORT_DATE_NAME,LIABILITY,PARENTNETPROFIT'
+    + '&filter=(SECURITY_CODE="' + code + '")';
+  const resp = await fetch(url);
+  const data = await resp.json();
+  if (!data.success || !data.result || data.result.data.length === 0) return null;
+  return data.result.data[0];
+}
+
+async function fetchFundamentals() {
+  if (quoteCodes.length === 0) {
+    setFundStatus('无股票代码，请先在行情表添加', 'off');
+    return;
+  }
+  setFundStatus('正在获取基本面数据…', 'loading');
+  fundData = {};
+  try {
+    const [valMap, realTimePrices] = await Promise.all([
+      fetchValuation(quoteCodes),
+      fetchRealTimePrices(quoteCodes)
+    ]);
+    // Override CLOSE_PRICE with real-time price
+    quoteCodes.forEach(c => {
+      if (realTimePrices[c] != null && valMap[c]) {
+        valMap[c].CLOSE_PRICE = realTimePrices[c];
+      }
+    });
+    const finPromises = quoteCodes.map(c => fetchFinance(c).catch(() => null));
+    const finResults = await Promise.all(finPromises);
+    const finMap = {};
+    quoteCodes.forEach((c, i) => { if (finResults[i]) finMap[c] = finResults[i]; });
+    quoteCodes.forEach(c => {
+      fundData[c] = {
+        valuation: valMap[c] || null,
+        finance: finMap[c] || null
+      };
+    });
+    renderFundTable();
+    const now = new Date();
+    setFundStatus('最后更新: ' + now.toLocaleString('zh-CN'), 'on');
+  } catch(e) {
+    setFundStatus('获取基本面数据失败: ' + e.message, 'err');
+  }
+}
+
+// Fetch real-time prices from Tencent API (same source as quote table)
+async function fetchRealTimePrices(codes) {
+  const tencentCodes = codes.map(tencentCode).join(',');
+  const resp = await fetch('https://qt.gtimg.cn/q=' + tencentCodes);
+  const buf = await resp.arrayBuffer();
+  const text = new TextDecoder('gbk').decode(buf);
+  const map = {};
+  text.split(';').forEach(line => {
+    line = line.trim();
+    if (!line) return;
+    const m = line.match(/v_(\w+)="([^"]*)"/);
+    if (!m) return;
+    const parts = m[2].split('~');
+    if (parts.length < 50) return;
+    const code = parts[2];
+    const price = parseFloat(parts[3]);
+    if (!isNaN(price) && price > 0) map[code] = price;
+  });
+  return map;
+}
+
+// ---- Number formatting helpers ----
+function fmtBigNum(n) {
+  if (n === null || n === undefined || n === '') return '—';
+  if (typeof n !== 'number') n = parseFloat(n);
+  if (isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  if (abs >= 1e12) return (n / 1e12).toFixed(2) + '万亿';
+  if (abs >= 1e8)  return (n / 1e8).toFixed(2) + '亿';
+  if (abs >= 1e4)  return (n / 1e4).toFixed(2) + '万';
+  return n.toFixed(2);
+}
+function fmtPctRaw(n, decimals) {
+  if (n === null || n === undefined || n === '' || isNaN(n)) return '—';
+  return n.toFixed(decimals || 2) + '%';
+}
+function fmtNumRaw(n, decimals) {
+  if (n === null || n === undefined || n === '' || isNaN(n)) return '—';
+  return n.toFixed(decimals || 2);
+}
+function fmtYi(n) {
+  // format a number that's in 元 to 亿
+  if (n === null || n === undefined || n === '' || isNaN(n)) return '—';
+  return (n / 1e8).toFixed(2);
+}
+function parseNumRaw(s) {
+  if (s === '' || s === null || s === undefined) return null;
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+
+// ---- Render table ----
+function renderFundTable() {
+  const thead = document.getElementById('fund-thead');
+  const tbody = document.getElementById('fund-tbody');
+  if (quoteCodes.length === 0) {
+    thead.innerHTML = '';
+    tbody.innerHTML = '<tr><td colspan="21" style="text-align:center;color:var(--text-muted);padding:20px;">无数据</td></tr>';
+    return;
+  }
+
+  // Header: 2 rows with group spans
+  let html = '';
+  html += '<tr class="fund-group-header">'
+    + '<th rowspan="2">代码</th><th rowspan="2">名称</th>'
+    + '<th colspan="4">市值</th>'
+    + '<th colspan="5">估值</th>'
+    + '<th colspan="7">财务</th>'
+    + '<th colspan="2">分红</th>'
+    + '<th rowspan="2">仓位</th>'
+    + '</tr>';
+  html += '<tr>'
+    // 市值 (4)
+    + '<th>最新价</th><th>总股本</th><th>总市值</th><th>企业价值</th>'
+    // 估值 (5)
+    + '<th>PE(TTM)</th><th>PB</th><th>PCF(TTM)</th><th>自由现金流率</th><th>股息率</th>'
+    // 财务 (7)
+    + '<th>报告期</th><th>负债合计</th><th>归母净利润</th><th>经营现金流(TTM)</th><th>资本支出(TTM)</th><th>自由现金流</th><th>类货币资金</th>'
+    // 分红 (2)
+    + '<th>静态分红</th><th>动态分红</th>'
+    + '</tr>';
+  thead.innerHTML = html;
+
+  let bodyHtml = '';
+  quoteCodes.forEach(code => {
+    const d = fundData[code] || {};
+    const v = d.valuation || {};
+    const f = d.finance || {};
+    const name = v.SECURITY_NAME_ABBR || f.SECURITY_NAME_ABBR || '—';
+
+    // API values
+    const closePrice  = v.CLOSE_PRICE || null;
+    const totalShares = v.TOTAL_SHARES || null;
+    const totalMv     = v.TOTAL_MARKET_CAP || null;
+    const peTtm       = v.PE_TTM || null;
+    const pbMrq       = v.PB_MRQ || null;
+    const pcfTtm      = v.PCF_OCF_TTM || null;
+    const reportDate  = f.REPORT_DATE_NAME || (f.REPORT_DATE ? f.REPORT_DATE.substring(0,10) : '—');
+    const liability   = f.LIABILITY || null;
+    const parentNP    = f.PARENTNETPROFIT || null;
+
+    // Editable values (stored in 亿 for large numbers, 元/股 for per-share)
+    const ocfTtmRaw    = getFundEdit(code, 'ocf_ttm');      // in 亿
+    const capexTtmRaw  = getFundEdit(code, 'capex_ttm');    // in 亿
+    const quasiCashRaw = getFundEdit(code, 'quasi_cash');   // in 亿
+    const staticDivRaw = getFundEdit(code, 'static_div');   // in 元/股
+    const dynamicDivRaw= getFundEdit(code, 'dynamic_div');  // in 元/股
+    const positionRaw  = getFundEdit(code, 'position');     // text
+
+    // Calculated values
+    const ocfTtm    = parseNumRaw(ocfTtmRaw);      // 亿
+    const capexTtm  = parseNumRaw(capexTtmRaw);    // 亿
+    const quasiCash = parseNumRaw(quasiCashRaw);   // 亿
+    const staticDiv = parseNumRaw(staticDivRaw);   // 元/股
+
+    // 企业价值 = 总市值 + 负债合计 - 类货币资金 (all in 元)
+    let ev = null;
+    if (totalMv !== null && liability !== null) {
+      ev = totalMv + liability;
+      if (quasiCash !== null) ev -= quasiCash * 1e8; // convert 亿 to 元
+    }
+    // 自由现金流 = 经营现金流TTM - 资本支出TTM (in 亿)
+    let fcf = null;
+    if (ocfTtm !== null && capexTtm !== null) fcf = ocfTtm - capexTtm;
+    // 自由现金流率 = 企业价值 / 自由现金流 (企业价值 in 元, FCF in 亿 → convert)
+    let fcfYield = null;
+    if (ev !== null && fcf !== null && fcf !== 0) {
+      fcfYield = ev / (fcf * 1e8); // ratio
+    }
+    // 股息率 = 静态分红 / 最新价
+    let divYield = null;
+    if (staticDiv !== null && closePrice !== null && closePrice !== 0) {
+      divYield = (staticDiv / closePrice) * 100; // percentage
+    }
+
+    bodyHtml += '<tr>'
+      + '<td>' + code + '</td>'
+      + '<td>' + name + '</td>'
+      // 市值 (4)
+      + '<td>' + fmtNumRaw(closePrice) + '</td>'
+      + '<td>' + fmtBigNum(totalShares) + '</td>'
+      + '<td>' + fmtBigNum(totalMv) + '</td>'
+      + '<td class="calc-cell">' + fmtBigNum(ev) + '</td>'
+      // 估值 (5)
+      + '<td>' + fmtNumRaw(peTtm) + '</td>'
+      + '<td>' + fmtNumRaw(pbMrq) + '</td>'
+      + '<td>' + fmtNumRaw(pcfTtm) + '</td>'
+      + '<td class="calc-cell">' + (fcfYield !== null ? fmtNumRaw(fcfYield) : '—') + '</td>'
+      + '<td class="calc-cell">' + fmtPctRaw(divYield) + '</td>'
+      // 财务 (7)
+      + '<td>' + reportDate + '</td>'
+      + '<td>' + fmtBigNum(liability) + '</td>'
+      + '<td>' + fmtBigNum(parentNP) + '</td>'
+      // editable: 经营现金流(TTM) in 亿
+      + '<td contenteditable="true" data-edit="' + code + '|ocf_ttm" data-unit="亿">' + (ocfTtmRaw || '') + '</td>'
+      // editable: 资本支出(TTM) in 亿
+      + '<td contenteditable="true" data-edit="' + code + '|capex_ttm" data-unit="亿">' + (capexTtmRaw || '') + '</td>'
+      // calc: 自由现金流 in 亿
+      + '<td class="calc-cell">' + (fcf !== null ? fmtNumRaw(fcf) : '—') + '</td>'
+      // editable: 类货币资金 in 亿
+      + '<td contenteditable="true" data-edit="' + code + '|quasi_cash" data-unit="亿">' + (quasiCashRaw || '') + '</td>'
+      // 分红 (2)
+      // editable: 静态分红 in 元/股
+      + '<td contenteditable="true" data-edit="' + code + '|static_div" data-unit="元/股">' + (staticDivRaw || '') + '</td>'
+      // editable: 动态分红 in 元/股
+      + '<td contenteditable="true" data-edit="' + code + '|dynamic_div" data-unit="元/股">' + (dynamicDivRaw || '') + '</td>'
+      // 仓位
+      + '<td contenteditable="true" data-edit="' + code + '|position" data-unit="">' + (positionRaw || '') + '</td>'
+      + '</tr>';
+  });
+  tbody.innerHTML = bodyHtml;
+
+  // Attach edit listeners
+  tbody.querySelectorAll('td[contenteditable]').forEach(td => {
+    td.addEventListener('focus', function() {
+      // Select all text on focus
+      const range = document.createRange();
+      range.selectNodeContents(this);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    });
+    td.addEventListener('blur', function() {
+      const [code, field] = this.getAttribute('data-edit').split('|');
+      const val = this.textContent.trim();
+      setFundEdit(code, field, val);
+      // Re-render this row to update calculated cells
+      recalcRow(code);
+    });
+    td.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.blur();
+      }
+    });
+  });
+  renderPortfolioValuation();
+}
+function recalcRow(code) {
+  const d = fundData[code] || {};
+  const v = d.valuation || {};
+  const f = d.finance || {};
+
+  const closePrice  = v.CLOSE_PRICE || null;
+  const totalMv     = v.TOTAL_MARKET_CAP || null;
+  const liability   = f.LIABILITY || null;
+
+  const ocfTtm    = parseNumRaw(getFundEdit(code, 'ocf_ttm'));
+  const capexTtm  = parseNumRaw(getFundEdit(code, 'capex_ttm'));
+  const quasiCash = parseNumRaw(getFundEdit(code, 'quasi_cash'));
+  const staticDiv = parseNumRaw(getFundEdit(code, 'static_div'));
+
+  // 企业价值
+  let ev = null;
+  if (totalMv !== null && liability !== null) {
+    ev = totalMv + liability;
+    if (quasiCash !== null) ev -= quasiCash * 1e8;
+  }
+  // 自由现金流
+  let fcf = null;
+  if (ocfTtm !== null && capexTtm !== null) fcf = ocfTtm - capexTtm;
+  // 自由现金流率
+  let fcfYield = null;
+  if (ev !== null && fcf !== null && fcf !== 0) fcfYield = ev / (fcf * 1e8);
+  // 股息率
+  let divYield = null;
+  if (staticDiv !== null && closePrice !== null && closePrice !== 0) divYield = (staticDiv / closePrice) * 100;
+
+  // Find the row and update calc cells
+  const rows = document.querySelectorAll('#fund-tbody tr');
+  quoteCodes.forEach((c, idx) => {
+    if (c !== code) return;
+    const row = rows[idx];
+    if (!row) return;
+    const cells = row.querySelectorAll('td');
+    // Column layout: 0=code, 1=name, 2=price, 3=shares, 4=mv, 5=EV(calc), 6=PE, 7=PB, 8=PCF, 9=FCFyield(calc), 10=divYield(calc), 11=reportDate, 12=liability, 13=parentNP, 14=ocf(edit), 15=capex(edit), 16=fcf(calc), 17=quasiCash(edit), 18=staticDiv(edit), 19=dynamicDiv(edit), 20=position(edit)
+    cells[5].textContent  = fmtBigNum(ev);
+    cells[9].textContent  = fcfYield !== null ? fmtNumRaw(fcfYield) : '—';
+    cells[10].textContent = fmtPctRaw(divYield);
+    cells[16].textContent = fcf !== null ? fmtNumRaw(fcf) : '—';
+  });
+  renderPortfolioValuation();
+}
+
+// ---- Portfolio Valuation (position-weighted) ----
+function renderPortfolioValuation() {
+  const section = document.getElementById('portfolio-val-section');
+  const hint = document.getElementById('portfolio-val-hint');
+  if (quoteCodes.length === 0 || Object.keys(fundData).length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+
+  // Collect per-stock metrics and position weights
+  let hasPosition = false;
+  const stocks = [];
+  quoteCodes.forEach(code => {
+    const d = fundData[code] || {};
+    const v = d.valuation || {};
+    const f = d.finance || {};
+    const closePrice = v.CLOSE_PRICE || null;
+    const totalMv    = v.TOTAL_MARKET_CAP || null;
+    const peTtm      = v.PE_TTM || null;
+    const pbMrq      = v.PB_MRQ || null;
+    const pcfTtm     = v.PCF_OCF_TTM || null;
+    const liability  = f.LIABILITY || null;
+
+    const ocfTtm    = parseNumRaw(getFundEdit(code, 'ocf_ttm'));
+    const capexTtm  = parseNumRaw(getFundEdit(code, 'capex_ttm'));
+    const quasiCash = parseNumRaw(getFundEdit(code, 'quasi_cash'));
+    const staticDiv = parseNumRaw(getFundEdit(code, 'static_div'));
+    const positionRaw = getFundEdit(code, 'position');
+
+    // EV
+    let ev = null;
+    if (totalMv !== null && liability !== null) {
+      ev = totalMv + liability;
+      if (quasiCash !== null) ev -= quasiCash * 1e8;
+    }
+    // FCF (亿)
+    let fcf = null;
+    if (ocfTtm !== null && capexTtm !== null) fcf = ocfTtm - capexTtm;
+    // FCF yield = EV / (FCF * 1e8)
+    let fcfYield = null;
+    if (ev !== null && fcf !== null && fcf !== 0) fcfYield = ev / (fcf * 1e8);
+    // Div yield %
+    let divYield = null;
+    if (staticDiv !== null && closePrice !== null && closePrice !== 0) divYield = (staticDiv / closePrice) * 100;
+
+    // Parse position weight
+    let posWeight = null;
+    if (positionRaw) {
+      const m = String(positionRaw).replace(/[^\d.]/g, '');
+      posWeight = m ? parseFloat(m) : null;
+      if (posWeight !== null && posWeight > 0) hasPosition = true;
+    }
+
+    stocks.push({ code, peTtm, pbMrq, pcfTtm, fcfYield, divYield, posWeight, totalMv });
+  });
+
+  // Determine weights
+  let weights;
+  if (hasPosition) {
+    // Use position weights (normalize to sum=1)
+    const total = stocks.reduce((s, x) => s + (x.posWeight || 0), 0);
+    if (total > 0) {
+      weights = stocks.map(x => (x.posWeight || 0) / total);
+    } else {
+      // Fallback: equal weight
+      weights = stocks.map(() => 1 / stocks.length);
+      hasPosition = false;
+    }
+  } else {
+    // Equal weight fallback
+    weights = stocks.map(() => 1 / stocks.length);
+  }
+
+  // Portfolio PE/PB/PCF: weighted harmonic mean = 1 / Σ(wᵢ / ratioᵢ)
+  function weightedHarmonicMean(values, weights) {
+    let sum = 0, count = 0;
+    for (let i = 0; i < values.length; i++) {
+      if (values[i] !== null && values[i] > 0 && weights[i] > 0) {
+        sum += weights[i] / values[i];
+        count++;
+      }
+    }
+    if (count === 0 || sum === 0) return null;
+    return 1 / sum;
+  }
+  // Weighted arithmetic mean (for yields)
+  function weightedArithMean(values, weights) {
+    let sum = 0, wsum = 0;
+    for (let i = 0; i < values.length; i++) {
+      if (values[i] !== null && weights[i] > 0) {
+        sum += values[i] * weights[i];
+        wsum += weights[i];
+      }
+    }
+    if (wsum === 0) return null;
+    return sum / wsum;
+  }
+
+  const peArr  = stocks.map(x => x.peTtm);
+  const pbArr  = stocks.map(x => x.pbMrq);
+  const pcfArr = stocks.map(x => x.pcfTtm);
+  const fcfArr = stocks.map(x => x.fcfYield);
+  const divArr = stocks.map(x => x.divYield);
+
+  const portPE  = weightedHarmonicMean(peArr, weights);
+  const portPB  = weightedHarmonicMean(pbArr, weights);
+  const portPCF = weightedHarmonicMean(pcfArr, weights);
+  const portFCF = weightedArithMean(fcfArr, weights);
+  const portDiv = weightedArithMean(divArr, weights);
+
+  document.getElementById('pv-pe').textContent  = portPE  !== null ? portPE.toFixed(2)  : '—';
+  document.getElementById('pv-pb').textContent  = portPB  !== null ? portPB.toFixed(2)  : '—';
+  document.getElementById('pv-pcf').textContent = portPCF !== null ? portPCF.toFixed(2) : '—';
+  document.getElementById('pv-fcf').textContent = portFCF !== null ? portFCF.toFixed(2) : '—';
+  document.getElementById('pv-div').textContent = portDiv !== null ? portDiv.toFixed(2) + '%' : '—';
+
+  // Hint text
+  const validCount = stocks.filter(x => x.peTtm !== null).length;
+  if (hasPosition) {
+    const posStocks = stocks.filter(x => x.posWeight !== null && x.posWeight > 0).map(x => x.code + '(' + x.posWeight + '%)').join(', ');
+    hint.textContent = '持仓权重: ' + posStocks + ' · 共 ' + validCount + ' 只股票有有效数据';
+  } else {
+    hint.textContent = '未填写仓位，按等权计算 · 请在表格"仓位"列填写持仓百分比以启用加权计算';
+  }
+}
+
+// ============ Notes Table (inline editable, auto-save) ============
+function initNotesTable() {
+  const cells = document.querySelectorAll('[data-notes]');
+  // Restore saved content
+  const saved = localStorage.getItem('portfolio_notes_v2');
+  if (saved) {
+    try {
+      const map = JSON.parse(saved);
+      cells.forEach(cell => {
+        const key = cell.getAttribute('data-notes');
+        if (map[key] !== undefined) cell.innerHTML = map[key];
+      });
+    } catch(e) {}
+  }
+  // Attach save listeners
+  cells.forEach(cell => {
+    cell.addEventListener('input', () => {
+      const map = {};
+      document.querySelectorAll('[data-notes]').forEach(c => {
+        map[c.getAttribute('data-notes')] = c.innerHTML;
+      });
+      localStorage.setItem('portfolio_notes_v2', JSON.stringify(map));
+      scheduleCloudSync();
+    });
+  });
+}
+
+// ============ Import / Export ============
+async function exportData() {
+  const exportObj = {
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    data: DATA,
+    fundEdits: fundEdits
+  };
+  const jsonStr = JSON.stringify(exportObj, null, 2);
+  const defaultName = 'portfolio_framework_' + new Date().toISOString().slice(0,10) + '.json';
+
+  // Try File System Access API (shows "Save As" dialog)
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: defaultName,
+        types: [{ description: 'JSON 文件', accept: { 'application/json': ['.json'] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(jsonStr);
+      await writable.close();
+      return;
+    } catch(e) {
+      if (e.name === 'AbortError') return;
+    }
+  }
+  // Fallback
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = defaultName;
+  a.click();
+  URL.revokeObjectURL(url);
+  alert('文件已下载到浏览器默认下载目录，文件名：' + defaultName);
+}
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      // Support both v1 (raw DATA) and v2 (wrapped with metadata)
+      if (imported.version === 2 && imported.data) {
+        DATA = imported.data;
+        if (imported.fundEdits) {
+          fundEdits = imported.fundEdits;
+          saveFundEdits();
+        }
+      } else {
+        // v1 format: direct DATA object
+        DATA = imported;
+      }
+      saveData();
+      renderAll();
+      if (fundExpanded) renderFundTable();
+      alert('导入成功！');
+    } catch(err) {
+      alert('导入失败：文件格式错误');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ============ Investment Discipline & Psychology System ============
+const DISC_STORE_KEY = 'portfolio_discipline';
+const QUESTIONS = [
+  { dim: '纪律执行', weight: 1.5, text: '本季度买卖决策中，有多少比例是严格按照预设清单/框架做出的(而非临时起意)?' },
+  { dim: '纪律执行', weight: null, text: '是否有因为"这次不一样"而破例偏离既定仓位上限或止损纪律?(5=从未破例)' },
+  { dim: '纪律执行', weight: null, text: '分红再投资等决策是否等到了预设的验证节点(如中报/年报)才行动?' },
+  { dim: '情绪状态', weight: 1.0, text: '过去三个月内，是否因为单日/单周涨跌而产生"想马上操作"的冲动?(5=完全没有)' },
+  { dim: '情绪状态', weight: null, text: '出现冲动时，是否有一个"冷静期"机制(如24小时后再决定)并被执行?' },
+  { dim: '情绪状态', weight: null, text: '持仓最重的品种大幅波动时，我的关注频率/焦虑感是否保持平稳?(5=完全平稳)' },
+  { dim: '认知偏误自查', weight: 1.0, text: '是否能清楚说出，如果现在不持有这只股票，我还会不会现在买入?(5=能清楚且答案一致)' },
+  { dim: '认知偏误自查', weight: null, text: '是否主动寻找过与自己持仓观点相反的研究或数据?' },
+  { dim: '认知偏误自查', weight: null, text: '近期判断是否避免了过度依赖最近1-2个季度数据、弱化长周期视角?(5=完全避免)' },
+  { dim: '知行一致性', weight: 1.3, text: '事后回看，决策日志里"预期依据"与"实际操作"的匹配度如何?(5=完全匹配)' },
+  { dim: '知行一致性', weight: null, text: '本季度"知道该做但没做"或"知道不该做但做了"的情况是否很少发生?(5=从未发生)' }
+];
+const DIM_WEIGHTS = { '纪律执行': 1.5, '情绪状态': 1.0, '认知偏误自查': 1.0, '知行一致性': 1.3 };
+const SCORE_THRESHOLD = 3.5;
+
+let discData = { decLog: [], questScores: {}, questPeriod: '', history: [] };
+
+function loadDiscData() {
+  try {
+    const raw = localStorage.getItem(DISC_STORE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      discData.decLog = parsed.decLog || [];
+      discData.questScores = parsed.questScores || {};
+      discData.questPeriod = parsed.questPeriod || '';
+      discData.history = parsed.history || [];
+    }
+  } catch(e) {}
+  // If empty, seed with default from Excel
+  if (discData.decLog.length === 0) {
+    discData.decLog = [{ date:'2026-07-12', stock:'平安银行', action:'观察，未操作', basis:'等待8月14日中报确认净利润拐点是否持续', emotion:'2', expected:'若中报确认拐点，考虑用周大生分红资金分批加仓', actual:'', review:'' }];
+  }
+  if (Object.keys(discData.questScores).length === 0) {
+    const defaults = [4,5,4,3,4,3,4,3,4,4,4];
+    defaults.forEach((v, i) => { discData.questScores[i] = v; });
+  }
+  if (discData.questPeriod === '') discData.questPeriod = '2026Q3';
+  if (discData.history.length === 0) {
+    discData.history = [{ period:'2026Q2', discipline:4, emotion:3.7, bias:3.3, consistency:4, total:3.79, status:'✅ 正常' }];
+  }
+}
+function saveDiscData() {
+  localStorage.setItem(DISC_STORE_KEY, JSON.stringify(discData));
+  scheduleCloudSync();
+}
+
+function switchDisciplineTab(btn, section) {
+  document.querySelectorAll('.discipline-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.discipline-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('disc-' + section).classList.add('active');
+  if (section === 'history') renderHistChart();
+}
+
+// ---- Decision Log ----
+function renderDecLog() {
+  const tbody = document.getElementById('dec-log-tbody');
+  let html = '';
+  discData.decLog.forEach((row, idx) => {
+    html += '<tr>'
+      + '<td contenteditable="true" data-disc="dec-log|' + idx + '|date">' + (row.date||'') + '</td>'
+      + '<td contenteditable="true" data-disc="dec-log|' + idx + '|stock">' + (row.stock||'') + '</td>'
+      + '<td contenteditable="true" data-disc="dec-log|' + idx + '|action">' + (row.action||'') + '</td>'
+      + '<td contenteditable="true" data-disc="dec-log|' + idx + '|basis">' + (row.basis||'') + '</td>'
+      + '<td contenteditable="true" data-disc="dec-log|' + idx + '|emotion" style="text-align:center;">' + (row.emotion||'') + '</td>'
+      + '<td contenteditable="true" data-disc="dec-log|' + idx + '|expected">' + (row.expected||'') + '</td>'
+      + '<td contenteditable="true" data-disc="dec-log|' + idx + '|actual">' + (row.actual||'') + '</td>'
+      + '<td contenteditable="true" data-disc="dec-log|' + idx + '|review">' + (row.review||'') + '</td>'
+      + '<td><button class="del-row" onclick="delDecLogRow(' + idx + ')">×</button></td>'
+      + '</tr>';
+  });
+  if (discData.decLog.length === 0) {
+    html = '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:12px;">点击「新增决策记录」开始</td></tr>';
+  }
+  tbody.innerHTML = html;
+  attachDiscEditListeners(tbody);
+}
+function addDecLogRow() {
+  discData.decLog.push({ date:'', stock:'', action:'', basis:'', emotion:'', expected:'', actual:'', review:'' });
+  saveDiscData();
+  renderDecLog();
+}
+function delDecLogRow(idx) {
+  discData.decLog.splice(idx, 1);
+  saveDiscData();
+  renderDecLog();
+}
+
+// ---- Questionnaire ----
+function renderQuestionnaire() {
+  document.getElementById('quest-period-input').value = discData.questPeriod;
+  const tbody = document.getElementById('quest-tbody');
+  let html = '';
+  let lastDim = '';
+  QUESTIONS.forEach((q, idx) => {
+    const showDim = q.dim !== lastDim;
+    lastDim = q.dim;
+    const score = discData.questScores[idx] || '';
+    html += '<tr>'
+      + '<td class="dim-cell">' + (showDim ? q.dim : '') + '</td>'
+      + '<td class="weight-cell">' + (showDim ? (q.weight || DIM_WEIGHTS[q.dim]) : '') + '</td>'
+      + '<td style="text-align:center;">' + (idx + 1) + '</td>'
+      + '<td>' + q.text + '</td>'
+      + '<td><input type="number" min="1" max="5" step="1" class="score-input" value="' + score + '" data-qidx="' + idx + '" oninput="onQuestScoreChange(this,' + idx + ')"></td>'
+      + '</tr>';
+  });
+  tbody.innerHTML = html;
+  renderQuestSummary();
+}
+function onQuestScoreChange(input, idx) {
+  let v = parseInt(input.value);
+  if (isNaN(v)) v = '';
+  else v = Math.max(1, Math.min(5, v));
+  discData.questScores[idx] = v;
+  saveDiscData();
+  renderQuestSummary();
+}
+function saveQuestData() {
+  discData.questPeriod = document.getElementById('quest-period-input').value;
+  saveDiscData();
+}
+function calcQuestScores() {
+  const dims = {};
+  Object.keys(DIM_WEIGHTS).forEach(d => { dims[d] = { sum: 0, count: 0, weight: DIM_WEIGHTS[d] }; });
+  QUESTIONS.forEach((q, idx) => {
+    const s = discData.questScores[idx];
+    if (s !== undefined && s !== '' && !isNaN(s)) {
+      dims[q.dim].sum += parseFloat(s);
+      dims[q.dim].count++;
+    }
+  });
+  let totalWeight = 0, weightedSum = 0;
+  Object.keys(dims).forEach(d => {
+    const dm = dims[d];
+    dm.avg = dm.count > 0 ? dm.sum / dm.count : 0;
+    dm.contrib = dm.avg * dm.weight;
+    totalWeight += dm.weight;
+    weightedSum += dm.contrib;
+  });
+  const totalScore = totalWeight > 0 ? weightedSum / totalWeight : 0;
+  const status = totalScore >= SCORE_THRESHOLD ? '✅ 正常' : '⚠ 黄灯';
+  return { dims, totalWeight, totalScore, status };
+}
+function renderQuestSummary() {
+  const r = calcQuestScores();
+  let html = '<table>';
+  html += '<tr><td><b>维度</b></td><td><b>权重</b></td><td><b>平均分</b></td><td><b>加权贡献</b></td></tr>';
+  Object.keys(r.dims).forEach(d => {
+    const dm = r.dims[d];
+    html += '<tr><td>' + d + '</td><td>' + dm.weight + '</td><td>' + dm.avg.toFixed(2) + '</td><td>' + dm.contrib.toFixed(2) + '</td></tr>';
+  });
+  html += '<tr class="total-row"><td>加权总分</td><td>总权重 ' + r.totalWeight + '</td><td colspan="2">' + r.totalScore.toFixed(2) + ' / 5.00</td></tr>';
+  html += '</table>';
+  const isOk = r.totalScore >= SCORE_THRESHOLD;
+  html += '<div class="quest-status ' + (isOk ? 'ok' : 'warn') + '">' + r.status + (isOk ? '' : '（低于阈值 ' + SCORE_THRESHOLD + '）') + '</div>';
+  document.getElementById('quest-summary').innerHTML = html;
+}
+
+// ---- History ----
+function renderHistory() {
+  const tbody = document.getElementById('hist-tbody');
+  let html = '';
+  // Current period row (auto from questionnaire)
+  const r = calcQuestScores();
+  const currentRow = {
+    period: discData.questPeriod + '(当期)',
+    discipline: r.dims['纪律执行'].avg,
+    emotion: r.dims['情绪状态'].avg,
+    bias: r.dims['认知偏误自查'].avg,
+    consistency: r.dims['知行一致性'].avg,
+    total: r.totalScore,
+    status: r.status,
+    isCurrent: true
+  };
+  // Current row first
+  html += '<tr class="hist-current-row">'
+    + '<td>' + currentRow.period + '</td>'
+    + '<td>' + currentRow.discipline.toFixed(2) + '</td>'
+    + '<td>' + currentRow.emotion.toFixed(2) + '</td>'
+    + '<td>' + currentRow.bias.toFixed(2) + '</td>'
+    + '<td>' + currentRow.consistency.toFixed(2) + '</td>'
+    + '<td>' + currentRow.total.toFixed(2) + '</td>'
+    + '<td>' + currentRow.status + '</td>'
+    + '<td></td>'
+    + '</tr>';
+  // Archived rows
+  discData.history.forEach((row, idx) => {
+    html += '<tr>'
+      + '<td contenteditable="true" data-disc="hist|' + idx + '|period">' + (row.period||'') + '</td>'
+      + '<td contenteditable="true" data-disc="hist|' + idx + '|discipline">' + (row.discipline||'') + '</td>'
+      + '<td contenteditable="true" data-disc="hist|' + idx + '|emotion">' + (row.emotion||'') + '</td>'
+      + '<td contenteditable="true" data-disc="hist|' + idx + '|bias">' + (row.bias||'') + '</td>'
+      + '<td contenteditable="true" data-disc="hist|' + idx + '|consistency">' + (row.consistency||'') + '</td>'
+      + '<td contenteditable="true" data-disc="hist|' + idx + '|total">' + (row.total||'') + '</td>'
+      + '<td contenteditable="true" data-disc="hist|' + idx + '|status">' + (row.status||'') + '</td>'
+      + '<td><button class="del-row" onclick="delHistRow(' + idx + ')">×</button></td>'
+      + '</tr>';
+  });
+  tbody.innerHTML = html;
+  attachDiscEditListeners(tbody);
+  renderHistChart();
+}
+function addHistRow() {
+  const r = calcQuestScores();
+  discData.history.push({
+    period: discData.questPeriod,
+    discipline: parseFloat(r.dims['纪律执行'].avg.toFixed(2)),
+    emotion: parseFloat(r.dims['情绪状态'].avg.toFixed(2)),
+    bias: parseFloat(r.dims['认知偏误自查'].avg.toFixed(2)),
+    consistency: parseFloat(r.dims['知行一致性'].avg.toFixed(2)),
+    total: parseFloat(r.totalScore.toFixed(2)),
+    status: r.status
+  });
+  saveDiscData();
+  renderHistory();
+}
+function delHistRow(idx) {
+  discData.history.splice(idx, 1);
+  saveDiscData();
+  renderHistory();
+}
+
+function renderHistChart() {
+  const svg = document.getElementById('hist-chart');
+  if (!svg) return;
+  const r = calcQuestScores();
+  // Build data points: history + current
+  const points = discData.history.map(h => ({
+    label: h.period,
+    discipline: h.discipline, emotion: h.emotion, bias: h.bias, consistency: h.consistency, total: h.total
+  }));
+  points.push({
+    label: discData.questPeriod + '(当期)',
+    discipline: r.dims['纪律执行'].avg,
+    emotion: r.dims['情绪状态'].avg,
+    bias: r.dims['认知偏误自查'].avg,
+    consistency: r.dims['知行一致性'].avg,
+    total: r.totalScore
+  });
+  if (points.length < 2) {
+    svg.innerHTML = '<text x="50%" y="50%" text-anchor="middle" fill="var(--text-muted)" font-size="11">至少需要2期数据才能绘制趋势</text>';
+    return;
+  }
+  const w = svg.clientWidth || 440, h = 120;
+  const pad = { l: 30, r: 10, t: 15, b: 25 };
+  const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
+  const xStep = cw / (points.length - 1);
+  const yMin = 1, yMax = 5;
+  function xPos(i) { return pad.l + i * xStep; }
+  function yPos(v) { return pad.t + ch - ((v - yMin) / (yMax - yMin)) * ch; }
+  const series = [
+    { key: 'discipline', color: '#e74c3c', label: '纪律' },
+    { key: 'emotion', color: '#3498db', label: '情绪' },
+    { key: 'bias', color: '#f39c12', label: '偏误' },
+    { key: 'consistency', color: '#2ecc71', label: '知行' },
+    { key: 'total', color: '#9b59b6', label: '总分' }
+  ];
+  let svgHtml = '';
+  // Grid lines
+  for (let v = 1; v <= 5; v++) {
+    const y = yPos(v);
+    svgHtml += '<line x1="' + pad.l + '" y1="' + y + '" x2="' + (w - pad.r) + '" y2="' + y + '" stroke="var(--border)" stroke-width="0.5"/>';
+    svgHtml += '<text x="' + (pad.l - 4) + '" y="' + (y + 3) + '" text-anchor="end" font-size="9" fill="var(--text-muted)">' + v + '</text>';
+  }
+  // Threshold line
+  const thY = yPos(SCORE_THRESHOLD);
+  svgHtml += '<line x1="' + pad.l + '" y1="' + thY + '" x2="' + (w - pad.r) + '" y2="' + thY + '" stroke="#e74c3c" stroke-width="0.8" stroke-dasharray="3,2"/>';
+  // Series
+  series.forEach(s => {
+    let path = '';
+    points.forEach((p, i) => {
+      const x = xPos(i), y = yPos(p[s.key]);
+      path += (i === 0 ? 'M' : 'L') + x + ',' + y + ' ';
+    });
+    svgHtml += '<path d="' + path + '" fill="none" stroke="' + s.color + '" stroke-width="1.5"/>';
+    points.forEach((p, i) => {
+      svgHtml += '<circle cx="' + xPos(i) + '" cy="' + yPos(p[s.key]) + '" r="2.5" fill="' + s.color + '"/>';
+    });
+  });
+  // X labels
+  points.forEach((p, i) => {
+    svgHtml += '<text x="' + xPos(i) + '" y="' + (h - 5) + '" text-anchor="middle" font-size="8" fill="var(--text-muted)">' + p.label.substring(0, 8) + '</text>';
+  });
+  // Legend
+  let lx = pad.l;
+  series.forEach(s => {
+    svgHtml += '<line x1="' + lx + '" y1="5" x2="' + (lx + 12) + '" y2="5" stroke="' + s.color + '" stroke-width="1.5"/>';
+    svgHtml += '<text x="' + (lx + 15) + '" y="8" font-size="8" fill="var(--text-muted)">' + s.label + '</text>';
+    lx += 50;
+  });
+  svg.innerHTML = svgHtml;
+}
+
+// ---- Shared edit listener ----
+function attachDiscEditListeners(tbody) {
+  tbody.querySelectorAll('td[contenteditable]').forEach(td => {
+    td.addEventListener('blur', function() {
+      const parts = this.getAttribute('data-disc').split('|');
+      const section = parts[0], idx = parseInt(parts[1]), field = parts[2];
+      const val = this.textContent.trim();
+      if (section === 'dec-log') {
+        if (discData.decLog[idx]) {
+          discData.decLog[idx][field] = val;
+          saveDiscData();
+        }
+      } else if (section === 'hist') {
+        if (discData.history[idx]) {
+          discData.history[idx][field] = val;
+          saveDiscData();
+        }
+      }
+    });
+    td.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+    });
+  });
+}
+
+function initDiscipline() {
+  loadDiscData();
+  renderDecLog();
+  renderQuestionnaire();
+  renderHistory();
+  initMindsetTracker();
+}
+
+// ============ Mindset Tracker (控制人性量化评估) ============
+const MINDSET_STORE_KEY = 'portfolio_mindset';
+const MINDSET_QUESTIONS = [
+  { dim: '信息节食', question: '在非交易需要时，我是否能做到一周只看1-2次盘，甚至不看盘，不被波动的分时图扰乱心智？' },
+  { dim: '逻辑锚定', question: '如果明天我持有的核心股票暴跌30%且基本面无恶化，我的第一反应是"兴奋/计划加仓"而不是"恐惧/割肉"？' },
+  { dim: '知行一致', question: '目前持有的前三大重仓股，我是否能不看任何资料，用3分钟向外行解释清楚它们的赚钱商业逻辑和核心风险？' },
+  { dim: '研究独立', question: '在买入或持有过程中，我是否能做到不去看各种股评社区（如雪球、东财）的散户吹捧或看空言论，保持独立？' },
+  { dim: '规则执行', question: '我所有的买入和卖出操作，是否都严格遵循了预先写好的"投资备忘录"计划，而非临时起意的随机交易？' },
+  { dim: '安全边际', question: '我的账户里是否永远留有应对极端行情的"备用现金"或场外稳定现金流，从而让我能安然入睡？' },
+  { dim: '认知诚实', question: '面对看错的股票，我是否能果断认错止损，而不是用"长期投资"来自我安慰、拖延纠错？' }
+];
+const MINDSET_THEORIES = [
+  { theory: '行为金融学\n(Behavioral Finance)', desc: '损失厌恶（Loss Aversion）：亏损痛苦是盈利快乐的2倍以上，导致频繁看盘和无理智割肉。\n过度自信：将牛市运气归结为能力，盲目满仓。', items: '第1项 (信息节食)\n第2项 (逻辑锚定)', rule: '【物理隔离】强制卸载手机行情软件，只保留电脑端交易功能；严格控制非交易日的看盘频率，每周不超过2次。' },
+  { theory: '格雷厄姆的\n"市场先生"', desc: '把市场视作躁郁症合伙人。知行不一本质上是因为被市场先生的情绪同化，无法做到利用其情绪提供的不合理低价。', items: '第2项 (逻辑锚定)\n第4项 (研究独立)', rule: '【估值锚定】在股票暴跌时，严禁盯着价格软件，必须打开企业财报与估值模型，确认基本面未恶化则执行分批买入方案。' },
+  { theory: '芒格的\n"能力圈理论"', desc: '"清晰的边界比能力圈的大小更重要"。在能力圈外盲目下注，由于内心底层并不真正"确信"，在股价波动时必然慌乱失守。', items: '第3项 (知行一致)\n第7项 (认知诚实)', rule: '【白名单制】非自身熟悉、不能用3分钟向外行解释清楚赚钱逻辑的股票，一律不入自选股，不赚认知以外的钱。' },
+  { theory: '投资备忘录制度\n(Investment Memo)', desc: '用静态、理性的系统（事前计划）去对抗动态、非理性的系统（盘中冲动）。将主观的自制力，转化为客观的流程管理。', items: '第5项 (规则执行)', rule: '【刚性流程】买入任何标的前，必须强制写明3大买入核心逻辑、3个基本面卖出条件（不含价格下跌）。无备忘录严禁下单。' },
+  { theory: '现金流与安全边际', desc: '留足资产弹性。没有现金防御，极易在市场最恐慌的底部因为资金链断裂或极度焦虑被迫"清仓割肉"。', items: '第6项 (安全边际)', rule: '【子弹备用】账户永远保留20%以上的战略现金或有可靠的场外持续增量资金流，确保在暴跌时有能力且有心态"买入"。' }
+];
+
+let mindsetData = { scores: {} };
+
+function loadMindsetData() {
+  try {
+    const raw = localStorage.getItem(MINDSET_STORE_KEY);
+    if (raw) mindsetData = JSON.parse(raw);
+  } catch(e) { mindsetData = { scores: {} }; }
+  if (!mindsetData.scores) mindsetData.scores = {};
+}
+function saveMindsetData() {
+  localStorage.setItem(MINDSET_STORE_KEY, JSON.stringify(mindsetData));
+  scheduleCloudSync();
+}
+
+function getMindsetStatus(score) {
+  if (score <= 2) return { text: '⚠️ 风险突出', cls: 'bad', color: '#ef4444' };
+  if (score === 3) return { text: '🔸 需提升', cls: 'mid', color: '#f59e0b' };
+  return { text: '✅ 表现优秀', cls: 'ok', color: '#10b981' };
+}
+
+function renderMindsetTable() {
+  const tbody = document.getElementById('mindset-tbody');
+  if (!tbody) return;
+  let html = '';
+  MINDSET_QUESTIONS.forEach((q, idx) => {
+    const score = mindsetData.scores[idx];
+    const status = score !== undefined && score !== '' ? getMindsetStatus(score) : null;
+    html += '<tr>' +
+      '<td style="text-align:center;color:var(--text-muted);">' + (idx+1) + '</td>' +
+      '<td style="font-weight:600;">' + q.dim + '</td>' +
+      '<td style="text-align:left;font-size:12px;">' + q.question + '</td>' +
+      '<td style="text-align:center;">' +
+        '<input type="number" min="1" max="5" class="mindset-score-input" value="' + (score !== undefined ? score : '') + '" ' +
+        'oninput="updateMindsetScore(' + idx + ', this.value)">' +
+      '</td>' +
+      '<td style="text-align:center;">' +
+        (status ? '<span class="mindset-status ' + status.cls + '">' + status.text + '</span>' : '') +
+      '</td>' +
+    '</tr>';
+  });
+  tbody.innerHTML = html;
+  renderMindsetSummary();
+}
+
+function updateMindsetScore(idx, val) {
+  if (val === '') { delete mindsetData.scores[idx]; }
+  else {
+    let v = parseInt(val);
+    if (isNaN(v)) return;
+    v = Math.max(1, Math.min(5, v));
+    mindsetData.scores[idx] = v;
+  }
+  saveMindsetData();
+  // Update only the status cell
+  const tbody = document.getElementById('mindset-tbody');
+  if (!tbody) return;
+  const row = tbody.rows[idx];
+  if (!row) return;
+  const score = mindsetData.scores[idx];
+  const statusCell = row.cells[4];
+  if (score !== undefined) {
+    const status = getMindsetStatus(score);
+    statusCell.innerHTML = '<span class="mindset-status ' + status.cls + '">' + status.text + '</span>';
+  } else {
+    statusCell.innerHTML = '';
+  }
+  renderMindsetSummary();
+}
+
+function renderMindsetSummary() {
+  const container = document.getElementById('mindset-summary');
+  if (!container) return;
+  const scores = MINDSET_QUESTIONS.map((_, idx) => mindsetData.scores[idx]).filter(s => s !== undefined && !isNaN(s));
+  const total = scores.reduce((a, b) => a + b, 0);
+  const maxTotal = MINDSET_QUESTIONS.length * 5;
+
+  let level = '', levelCls = '', prescription = '';
+  if (total >= 28) {
+    level = '👑 知行合一践行者'; levelCls = 'success';
+    prescription = '已建立成熟的价值投资心智系统，继续保持知行合一的状态，可适度扩大能力圈。';
+  } else if (total >= 21) {
+    level = '⚖️ 摇摆的理性人'; levelCls = 'warn';
+    prescription = '理性框架已初步建立但在执行中时有摇摆，重点强化薄弱维度的刚性约束。';
+  } else if (total > 0) {
+    level = '❌ 本能的奴隶'; levelCls = 'danger';
+    prescription = '投资决策仍被本能和情绪驱动，建议立即建立投资备忘录制度和物理隔离机制。';
+  } else {
+    level = '—'; levelCls = ''; prescription = '请完成上方自评打分后查看诊断结果。';
+  }
+
+  let html = '<div class="mindset-summary">' +
+    '<div class="mindset-summary-card"><div class="label">量化综合总分 (满分' + maxTotal + '分)</div>' +
+    '<div class="value ' + levelCls + '">' + (total > 0 ? total : '—') + '</div></div>' +
+    '<div class="mindset-summary-card"><div class="label">当前心智成长段位</div>' +
+    '<div class="value ' + levelCls + '">' + level + '</div></div>' +
+  '</div>';
+
+  // Bar chart
+  html += '<div class="mindset-bar-container">';
+  html += '<div style="font-size:13px;font-weight:600;margin-bottom:10px;">各维度投资心智量化得分分布</div>';
+  MINDSET_QUESTIONS.forEach((q, idx) => {
+    const score = mindsetData.scores[idx];
+    const pct = score ? (score / 5 * 100) : 0;
+    let color = '#e9ecef';
+    if (score) {
+      if (score <= 2) color = '#ef4444';
+      else if (score === 3) color = '#f59e0b';
+      else color = '#10b981';
+    }
+    html += '<div class="mindset-bar-row">' +
+      '<span class="mindset-bar-label">' + q.dim + '</span>' +
+      '<div class="mindset-bar-track"><div class="mindset-bar-fill" style="width:' + pct + '%;background:' + color + ';"></div></div>' +
+      '<span class="mindset-bar-score">' + (score || '—') + '/5</span>' +
+    '</div>';
+  });
+  html += '</div>';
+
+  // Prescription
+  html += '<div style="margin-top:12px;background:#fff3cd;border:1px solid #ffeaa7;border-radius:8px;padding:12px 16px;font-size:13px;line-height:1.6;">' +
+    '<b>📋 系统优化处方建议：</b>' + prescription + '</div>';
+
+  container.innerHTML = html;
+}
+
+function renderMindsetTheory() {
+  const tbody = document.getElementById('mindset-theory-tbody');
+  if (!tbody) return;
+  let html = '';
+  MINDSET_THEORIES.forEach((t, idx) => {
+    html += '<tr>' +
+      '<td style="text-align:center;color:var(--text-muted);">' + (idx+1) + '</td>' +
+      '<td style="font-weight:600;white-space:pre-line;">' + t.theory + '</td>' +
+      '<td style="text-align:left;font-size:12px;white-space:pre-line;">' + t.desc + '</td>' +
+      '<td style="text-align:left;font-size:12px;white-space:pre-line;">' + t.items + '</td>' +
+      '<td style="text-align:left;font-size:12px;">' + t.rule + '</td>' +
+    '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+function initMindsetTracker() {
+  loadMindsetData();
+  renderMindsetTable();
+  renderMindsetTheory();
+}
+
+// ============ Cloud Sync (GitHub API) ============
+const CLOUD_CONFIG = {
+  owner: 'zhaojasonar-zjj',
+  repo: 'High-Dividend-Strategy',
+  path: 'data/portfolio.json',
+  snapshotsDir: 'data/portfolio_snapshots',
+  branch: 'main'
+};
+const TOKEN_KEY = 'github_pat_token';
+let cloudSHA = null;
+let cloudSyncTimer = null;
+let cloudSyncing = false;
+let cloudLoading = false;
+let cloudEnabled = !!localStorage.getItem(TOKEN_KEY);
+
+function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+function setToken(token) {
+  localStorage.setItem(TOKEN_KEY, token);
+  cloudEnabled = !!token.trim();
+  updateCloudStatus();
+}
+function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+  cloudEnabled = false;
+  cloudSHA = null;
+  updateCloudStatus();
+}
+function getCloudHeaders() {
+  return {
+    'Authorization': 'Bearer ' + getToken(),
+    'Accept': 'application/vnd.github+json',
+    'Content-Type': 'application/json'
+  };
+}
+
+// Collect ALL locally stored data into one object
+function collectAllData() {
+  return {
+    version: 3,
+    savedAt: new Date().toISOString(),
+    main: DATA,
+    quoteCodes: quoteCodes,
+    fundEdits: fundEdits,
+    notes: JSON.parse(localStorage.getItem('portfolio_notes_v2') || '{}'),
+    discipline: JSON.parse(localStorage.getItem(DISC_STORE_KEY) || '{}'),
+    mindset: JSON.parse(localStorage.getItem(MINDSET_STORE_KEY) || '{}')
+  };
+}
+
+// Distribute cloud data back to all local stores + in-memory variables
+function distributeCloudData(cloudData) {
+  let changed = false;
+  if (cloudData.main) {
+    DATA = cloudData.main;
+    // Migration: ensure stockOrder and stockNames exist and are consistent
+    if (!DATA.stockOrder || DATA.stockOrder.length === 0) {
+      DATA.stockOrder = Object.keys(DATA).filter(k => DATA[k] && typeof DATA[k] === 'object' && 'rows' in DATA[k]);
+      if (DATA.stockOrder.length === 0) DATA.stockOrder = DEFAULT_STOCK_ORDER.slice();
+    }
+    if (!DATA.stockNames) {
+      DATA.stockNames = {};
+    }
+    // Ensure all stocks in stockOrder have a name
+    DATA.stockOrder.forEach(k => {
+      if (!DATA.stockNames[k]) DATA.stockNames[k] = DEFAULT_STOCK_NAMES[k] || k;
+    });
+    // Clean up stockNames entries for deleted stocks
+    Object.keys(DATA.stockNames).forEach(k => {
+      if (!DATA.stockOrder.includes(k)) delete DATA.stockNames[k];
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
+    changed = true;
+  }
+  if (cloudData.quoteCodes) {
+    quoteCodes = cloudData.quoteCodes;
+    localStorage.setItem(QUOTE_STORE_KEY, JSON.stringify(quoteCodes));
+    changed = true;
+  }
+  if (cloudData.fundEdits) {
+    fundEdits = cloudData.fundEdits;
+    localStorage.setItem(FUND_EDIT_KEY, JSON.stringify(fundEdits));
+    changed = true;
+  }
+  if (cloudData.notes) {
+    localStorage.setItem('portfolio_notes_v2', JSON.stringify(cloudData.notes));
+    changed = true;
+  }
+  if (cloudData.discipline) {
+    localStorage.setItem(DISC_STORE_KEY, JSON.stringify(cloudData.discipline));
+    discData = cloudData.discipline;
+    // Ensure all fields exist
+    if (!discData.decLog) discData.decLog = [];
+    if (!discData.questScores) discData.questScores = {};
+    if (!discData.questPeriod) discData.questPeriod = '';
+    if (!discData.history) discData.history = [];
+    changed = true;
+  }
+  if (cloudData.mindset) {
+    localStorage.setItem(MINDSET_STORE_KEY, JSON.stringify(cloudData.mindset));
+    mindsetData = cloudData.mindset;
+    if (!mindsetData.scores) mindsetData.scores = {};
+    changed = true;
+  }
+  return changed;
+}
+
+// Load from GitHub
+async function cloudLoad() {
+  if (!cloudEnabled) return { success: false, reason: 'no-token' };
+  setCloudStatus('正在从云端加载…', 'loading');
+  try {
+    const url = 'https://api.github.com/repos/' + CLOUD_CONFIG.owner + '/' + CLOUD_CONFIG.repo + '/contents/' + CLOUD_CONFIG.path + '?ref=' + CLOUD_CONFIG.branch;
+    const resp = await fetch(url, { headers: getCloudHeaders() });
+    if (resp.status === 404) {
+      cloudSHA = null;
+      setCloudStatus('云端无数据，首次保存将创建', 'offline');
+      return { success: false, reason: 'not-found' };
+    }
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    cloudSHA = data.sha;
+    const content = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, '')))));
+    return { success: true, data: content };
+  } catch(e) {
+    setCloudStatus('加载失败: ' + e.message, 'error');
+    return { success: false, reason: e.message };
+  }
+}
+
+// Save to GitHub
+async function cloudSave() {
+  if (!cloudEnabled) return false;
+  if (cloudSyncing) return false;
+  cloudSyncing = true;
+  setCloudStatus('正在保存到云端…', 'saving');
+  try {
+    const allData = collectAllData();
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(allData, null, 2))));
+    const url = 'https://api.github.com/repos/' + CLOUD_CONFIG.owner + '/' + CLOUD_CONFIG.repo + '/contents/' + CLOUD_CONFIG.path;
+    const body = {
+      message: '数据更新 ' + new Date().toLocaleString('zh-CN'),
+      content: content,
+      branch: CLOUD_CONFIG.branch
+    };
+    if (cloudSHA) body.sha = cloudSHA;
+    
+    const resp = await fetch(url, {
+      method: 'PUT',
+      headers: getCloudHeaders(),
+      body: JSON.stringify(body)
+    });
+    
+    if (resp.status === 409) {
+      // Conflict — another device pushed since we last loaded
+      setCloudStatus('冲突：数据已被其他设备更新，正在重新加载…', 'error');
+      cloudLoading = true;
+      const result = await cloudLoad();
+      if (result.success) {
+        distributeCloudData(result.data);
+        renderAll();
+        setCloudStatus('已合并云端数据 · ' + new Date(result.data.savedAt).toLocaleString('zh-CN'), 'synced');
+      }
+      cloudLoading = false;
+      cloudSyncing = false;
+      return false;
+    }
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.message || 'HTTP ' + resp.status);
+    }
+    const data = await resp.json();
+    cloudSHA = data.content.sha;
+    setCloudStatus('已保存 · ' + new Date().toLocaleString('zh-CN'), 'synced');
+    cloudSyncing = false;
+    return true;
+  } catch(e) {
+    setCloudStatus('保存失败: ' + e.message, 'error');
+    cloudSyncing = false;
+    return false;
+  }
+}
+
+// Debounced cloud sync — called from all local save functions
+function scheduleCloudSync() {
+  if (!cloudEnabled || cloudLoading) return;
+  if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
+  setCloudStatus('编辑中… 待同步', 'ready');
+  cloudSyncTimer = setTimeout(() => {
+    cloudSave();
+  }, 3000); // 3 second debounce
+}
+
+function setCloudStatus(text, state) {
+  const el = document.getElementById('cloud-status-text');
+  const dot = document.getElementById('cloud-dot');
+  if (el) el.textContent = text;
+  if (dot) dot.className = 'cloud-dot ' + state;
+}
+
+function updateCloudStatus() {
+  if (!cloudEnabled) {
+    setCloudStatus('未连接云端', 'offline');
+  } else {
+    setCloudStatus('已就约 · 编辑后自动同步', 'ready');
+  }
+}
+
+// Token modal
+function showTokenModal() {
+  document.getElementById('token-modal').classList.add('show');
+  const input = document.getElementById('token-input');
+  input.value = getToken();
+  setTimeout(() => input.focus(), 100);
+}
+function hideTokenModal() {
+  document.getElementById('token-modal').classList.remove('show');
+}
+function saveTokenFromModal() {
+  const token = document.getElementById('token-input').value.trim();
+  if (!token) {
+    alert('请输入有效的 GitHub Token');
+    return;
+  }
+  setToken(token);
+  hideTokenModal();
+  // Try to load from cloud immediately
+  cloudLoadAndRender();
+}
+function clearTokenFromModal() {
+  if (confirm('确定要清除 Token 并断开云端同步吗？\n\n本地数据不会被删除，仍可正常使用。\n重新输入 Token 即可恢复同步。')) {
+    clearToken();
+    hideTokenModal();
+  }
+}
+
+// Manual save button
+function manualCloudSave() {
+  if (!cloudEnabled) {
+    showTokenModal();
+    return;
+  }
+  // Cancel any pending debounce and save immediately
+  if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer = null; }
+  cloudSave();
+}
+
+// Load from cloud and re-render
+async function cloudLoadAndRender() {
+  if (!cloudEnabled) {
+    showTokenModal();
+    return;
+  }
+  cloudLoading = true;
+  const result = await cloudLoad();
+  if (result.success) {
+    const changed = distributeCloudData(result.data);
+    if (changed) {
+      renderAll();
+      // Also reload notes table content
+      const saved = localStorage.getItem('portfolio_notes_v2');
+      if (saved) {
+        try {
+          const map = JSON.parse(saved);
+          document.querySelectorAll('[data-notes]').forEach(cell => {
+            const key = cell.getAttribute('data-notes');
+            if (map[key] !== undefined) cell.innerHTML = map[key];
+          });
+        } catch(e) {}
+      }
+    }
+    setCloudStatus('已同步 · ' + new Date(result.data.savedAt).toLocaleString('zh-CN'), 'synced');
+  } else if (result.reason === 'no-token') {
+    showTokenModal();
+  }
+  cloudLoading = false;
+}
+
+// ============ GitHub API helpers (for snapshots) ============
+async function githubGetFile(path) {
+  const url = 'https://api.github.com/repos/' + CLOUD_CONFIG.owner + '/' + CLOUD_CONFIG.repo + '/contents/' + path + '?ref=' + CLOUD_CONFIG.branch;
+  const resp = await fetch(url, { headers: getCloudHeaders() });
+  if (resp.status === 404) return null;
+  if (!resp.ok) throw new Error('GitHub API ' + resp.status);
+  return resp.json();
+}
+
+async function githubPutFile(path, content, sha, message) {
+  const url = 'https://api.github.com/repos/' + CLOUD_CONFIG.owner + '/' + CLOUD_CONFIG.repo + '/contents/' + path;
+  const body = { message, content, branch: CLOUD_CONFIG.branch };
+  if (sha) body.sha = sha;
+  const resp = await fetch(url, {
+    method: 'PUT',
+    headers: getCloudHeaders(),
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.message || 'HTTP ' + resp.status);
+  }
+  return resp.json();
+}
+
+async function githubListFiles(dirPath) {
+  const url = 'https://api.github.com/repos/' + CLOUD_CONFIG.owner + '/' + CLOUD_CONFIG.repo + '/contents/' + dirPath + '?ref=' + CLOUD_CONFIG.branch;
+  const resp = await fetch(url, { headers: getCloudHeaders() });
+  if (resp.status === 404) return [];
+  if (!resp.ok) throw new Error('GitHub API ' + resp.status);
+  return resp.json();
+}
+
+async function githubDeleteFile(path, sha, message) {
+  const url = 'https://api.github.com/repos/' + CLOUD_CONFIG.owner + '/' + CLOUD_CONFIG.repo + '/contents/' + path;
+  const resp = await fetch(url, {
+    method: 'DELETE',
+    headers: getCloudHeaders(),
+    body: JSON.stringify({ message, sha, branch: CLOUD_CONFIG.branch })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.message || 'HTTP ' + resp.status);
+  }
+  return resp.json();
+}
+
+// ============ Named Snapshots ============
+const LOCAL_SNAPSHOTS_KEY = 'portfolio_local_snapshots';
+
+function showSnapshotModal() {
+  document.getElementById('snapshot-label').value = '';
+  document.getElementById('snapshot-modal').classList.add('show');
+  loadSnapshotList();
+}
+
+function closeSnapshotModal() {
+  document.getElementById('snapshot-modal').classList.remove('show');
+}
+
+async function saveSnapshot() {
+  const label = document.getElementById('snapshot-label').value.trim();
+  if (!label) { alert('请输入快照标签'); return; }
+
+  const safeLabel = label.replace(/[\/\\:*?"<>|]/g, '_');
+  const ts = new Date();
+  const tsStr = ts.getFullYear() +
+    String(ts.getMonth()+1).padStart(2,'0') +
+    String(ts.getDate()).padStart(2,'0') +
+    String(ts.getHours()).padStart(2,'0') +
+    String(ts.getMinutes()).padStart(2,'0') +
+    String(ts.getSeconds()).padStart(2,'0');
+  const fileName = tsStr + '_' + safeLabel + '.json';
+
+  const snapData = collectAllData();
+  snapData.snapshotMeta = {
+    label: label,
+    createdAt: ts.toISOString()
+  };
+
+  if (cloudEnabled) {
+    try {
+      setCloudStatus('正在保存快照…', 'saving');
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(snapData, null, 2))));
+      await githubPutFile(
+        CLOUD_CONFIG.snapshotsDir + '/' + fileName,
+        content,
+        null,
+        'Portfolio: 保存快照 - ' + label
+      );
+      setCloudStatus('已保存 · ' + new Date().toLocaleString('zh-CN'), 'synced');
+      alert('快照已保存至云端: ' + label);
+    } catch(e) {
+      setCloudStatus('保存快照失败: ' + e.message, 'error');
+      alert('保存快照失败: ' + e.message);
+      return;
+    }
+  } else {
+    // Local snapshot
+    const localSnaps = JSON.parse(localStorage.getItem(LOCAL_SNAPSHOTS_KEY) || '[]');
+    localSnaps.push({ name: fileName, data: snapData });
+    localStorage.setItem(LOCAL_SNAPSHOTS_KEY, JSON.stringify(localSnaps));
+    alert('快照已保存至本地: ' + label);
+  }
+
+  await loadSnapshotList();
+  document.getElementById('snapshot-label').value = '';
+}
+
+function parseSnapshotName(fileName) {
+  // Format: {timestamp}_{label}.json
+  const base = fileName.replace(/\.json$/, '');
+  const parts = base.split('_');
+  const tsStr = parts[0] || '';
+  const label = parts.slice(1).join('_') || '(未命名)';
+  let timeDisplay = tsStr;
+  if (tsStr.length === 14) {
+    timeDisplay = tsStr.substring(0,4) + '-' + tsStr.substring(4,6) + '-' + tsStr.substring(6,8) +
+      ' ' + tsStr.substring(8,10) + ':' + tsStr.substring(10,12) + ':' + tsStr.substring(12,14);
+  }
+  return { label, timeDisplay };
+}
+
+async function loadSnapshotList() {
+  const listEl = document.getElementById('snapshot-list');
+
+  if (!cloudEnabled) {
+    // Local snapshots
+    const localSnaps = JSON.parse(localStorage.getItem(LOCAL_SNAPSHOTS_KEY) || '[]');
+    if (localSnaps.length === 0) {
+      listEl.innerHTML = '<div class="empty-hint">暂无本地快照</div>';
+      return;
+    }
+    listEl.innerHTML = localSnaps.sort((a,b) => b.name.localeCompare(a.name)).map(s => {
+      const parsed = parseSnapshotName(s.name);
+      return '<div class="snapshot-item">' +
+        '<div class="snap-info">' +
+        '<div class="snap-label">' + escapeHtml(parsed.label) + '</div>' +
+        '<div class="snap-time">' + parsed.timeDisplay + '</div>' +
+        '</div>' +
+        '<div class="snap-actions">' +
+        '<button class="snap-btn restore" onclick="restoreSnapshotLocal(\'' + s.name.replace(/'/g, "\\'") + '\')">恢复</button>' +
+        '<button class="snap-btn delete" onclick="deleteSnapshotLocal(\'' + s.name.replace(/'/g, "\\'") + '\')">删除</button>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+    return;
+  }
+
+  try {
+    listEl.innerHTML = '<div class="empty-hint">加载中...</div>';
+    const files = await githubListFiles(CLOUD_CONFIG.snapshotsDir);
+    const mySnaps = files
+      .filter(f => f.name.endsWith('.json'))
+      .sort((a, b) => b.name.localeCompare(a.name));
+
+    if (mySnaps.length === 0) {
+      listEl.innerHTML = '<div class="empty-hint">暂无快照</div>';
+      return;
+    }
+
+    listEl.innerHTML = mySnaps.map(f => {
+      const parsed = parseSnapshotName(f.name);
+      return '<div class="snapshot-item">' +
+        '<div class="snap-info">' +
+        '<div class="snap-label">' + escapeHtml(parsed.label) + '</div>' +
+        '<div class="snap-time">' + parsed.timeDisplay + '</div>' +
+        '</div>' +
+        '<div class="snap-actions">' +
+        '<button class="snap-btn restore" onclick="restoreSnapshot(\'' + f.path + '\')">恢复</button>' +
+        '<button class="snap-btn delete" onclick="deleteSnapshot(\'' + f.path + '\',\'' + f.sha + '\',\'' + f.name.replace(/'/g, "\\'") + '\')">删除</button>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+  } catch(e) {
+    listEl.innerHTML = '<div class="empty-hint">加载失败: ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function applySnapshotData(snapData) {
+  cloudLoading = true;
+  const changed = distributeCloudData(snapData);
+  if (changed) {
+    renderAll();
+    // Reload notes table content
+    const saved = localStorage.getItem('portfolio_notes_v2');
+    if (saved) {
+      try {
+        const map = JSON.parse(saved);
+        document.querySelectorAll('[data-notes]').forEach(cell => {
+          const key = cell.getAttribute('data-notes');
+          if (map[key] !== undefined) cell.innerHTML = map[key];
+        });
+      } catch(e) {}
+    }
+  }
+  cloudLoading = false;
+}
+
+async function restoreSnapshot(path) {
+  if (!confirm('恢复快照将覆盖当前数据，确定？')) return;
+  try {
+    setCloudStatus('正在加载快照…', 'loading');
+    const file = await githubGetFile(path);
+    if (file) {
+      const content = JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g, '')))));
+      applySnapshotData(content);
+      setCloudStatus('快照已恢复（需手动保存才会写入主数据）', 'ready');
+      alert('快照已恢复（需手动保存才会写入主数据）');
+    }
+  } catch(e) {
+    setCloudStatus('恢复失败: ' + e.message, 'error');
+    alert('恢复失败: ' + e.message);
+  }
+}
+
+async function deleteSnapshot(path, sha, name) {
+  if (!confirm('删除快照「' + name + '」？')) return;
+  try {
+    await githubDeleteFile(path, sha, 'Portfolio: 删除快照 ' + name);
+    alert('快照已删除');
+    await loadSnapshotList();
+  } catch(e) {
+    alert('删除失败: ' + e.message);
+  }
+}
+
+// Local snapshot restore/delete (no PAT)
+function restoreSnapshotLocal(name) {
+  if (!confirm('恢复快照将覆盖当前数据，确定？')) return;
+  const localSnaps = JSON.parse(localStorage.getItem(LOCAL_SNAPSHOTS_KEY) || '[]');
+  const snap = localSnaps.find(s => s.name === name);
+  if (snap && snap.data) {
+    applySnapshotData(snap.data);
+    alert('快照已恢复（需手动保存才会写入主数据）');
+  } else {
+    alert('快照数据损坏');
+  }
+}
+
+function deleteSnapshotLocal(name) {
+  if (!confirm('删除快照「' + name + '」？')) return;
+  let localSnaps = JSON.parse(localStorage.getItem(LOCAL_SNAPSHOTS_KEY) || '[]');
+  localSnaps = localSnaps.filter(s => s.name !== name);
+  localStorage.setItem(LOCAL_SNAPSHOTS_KEY, JSON.stringify(localSnaps));
+  alert('快照已删除');
+  loadSnapshotList();
+}
+
+// Init cloud sync on page load
+async function initCloudSync() {
+  if (!cloudEnabled) {
+    updateCloudStatus();
+    return;
+  }
+  cloudLoading = true;
+  // Try to load from cloud, re-render if data changed
+  const result = await cloudLoad();
+  if (result.success) {
+    const changed = distributeCloudData(result.data);
+    if (changed) {
+      renderAll();
+      // Reload notes table content
+      const saved = localStorage.getItem('portfolio_notes_v2');
+      if (saved) {
+        try {
+          const map = JSON.parse(saved);
+          document.querySelectorAll('[data-notes]').forEach(cell => {
+            const key = cell.getAttribute('data-notes');
+            if (map[key] !== undefined) cell.innerHTML = map[key];
+          });
+        } catch(e) {}
+      }
+    }
+    setCloudStatus('已同步 · ' + new Date(result.data.savedAt).toLocaleString('zh-CN'), 'synced');
+  }
+  cloudLoading = false;
+}
+
+// ============ Init ============
+function renderAll() {
+  renderAllStockTables();
+  initNotesTable();
+  loadFundEdits();
+  initDiscipline();
+  // Quotes — initial fetch
+  fetchQuotes();
+  // Kelly — restore saved values (including manual b override)
+  document.getElementById('k-p').value = DATA.kelly.p;
+  document.getElementById('k-up').value = DATA.kelly.up;
+  document.getElementById('k-down').value = DATA.kelly.down;
+  document.getElementById('k-b').value = DATA.kelly.b !== undefined ? DATA.kelly.b : '';
+  calcKellyResults();
+}
+
+// Suppress cloud saves during initial load
+if (cloudEnabled) cloudLoading = true;
+renderAll();
+initCloudSync();
+</script>
+</body>
+</html>
