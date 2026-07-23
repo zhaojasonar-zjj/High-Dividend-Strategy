@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-22T06:50:32.418Z",
+  "savedAt": "2026-07-23T05:13:03.768Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -286,6 +286,16 @@
         "basis": "i茅台飞天茅台涨价100元到1639元，超高端酒涨价，高端酒降价压力下降/涨价动力提升",
         "emotion": "1",
         "expected": "回调加仓",
+        "actual": "",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
+        "expected": "",
         "actual": "",
         "review": ""
       }
