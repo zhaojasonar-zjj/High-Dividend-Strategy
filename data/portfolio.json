@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-23T10:07:08.987Z",
+  "savedAt": "2026-07-23T10:07:44.953Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -304,6 +304,16 @@
         "action": "分红资金，30天内战术择机买入，纪律性。慎终如始（绝对不能临时决策交易）",
         "basis": "7%左右的高股息 + 每年两次分红 + 30天战术择机买入 + 长期持有",
         "emotion": "1",
+        "expected": "",
+        "actual": "",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
         "expected": "",
         "actual": "",
         "review": ""
