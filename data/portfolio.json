@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-24T03:07:22.997Z",
+  "savedAt": "2026-07-24T03:07:42.142Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -170,6 +170,9 @@
       "position": "0%",
       "ocf_ttm": "",
       "capex_ttm": ""
+    },
+    "605599": {
+      "static_div": "0.78"
     },
     "002867": {
       "static_div": "0.9",
