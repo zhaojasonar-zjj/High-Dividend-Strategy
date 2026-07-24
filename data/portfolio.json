@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-07-24T03:49:48.958Z",
+  "savedAt": "2026-07-24T03:50:30.286Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -151,7 +151,7 @@
       "s_mrydz8m2": "菜百股份"
     },
     "s_mrydz8m2": {
-      "nextCheck": "",
+      "nextCheck": "8月26日半年报",
       "rows": [
         {
           "date": "2026-7-24",
