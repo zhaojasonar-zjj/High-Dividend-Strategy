@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-01T14:04:05.856Z",
+  "savedAt": "2026-08-01T14:04:09.159Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -357,7 +357,7 @@
         "stock": "菜百股份",
         "action": "根据凯利公式，赔率下降，降仓位",
         "basis": "",
-        "emotion": "",
+        "emotion": "1",
         "expected": "",
         "actual": "",
         "review": ""
