@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-01T14:18:38.852Z",
+  "savedAt": "2026-08-01T14:18:44.555Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -358,7 +358,7 @@
         "action": "根据凯利公式，赔率下降，降仓位",
         "basis": "以退为进，活下来，战略使命优先",
         "emotion": "1",
-        "expected": "涨则减，不涨则拿",
+        "expected": "约17元涨则减，不涨则拿",
         "actual": "",
         "review": ""
       }
