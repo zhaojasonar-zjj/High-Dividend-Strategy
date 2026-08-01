@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-01T14:02:26.890Z",
+  "savedAt": "2026-08-01T14:02:45.952Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -349,6 +349,16 @@
         "basis": "周大福Q2内地零售值增长10.7%，同店销售增长19.6%、销售量下降5.2%",
         "emotion": "1",
         "expected": "享受复苏，耐心持股等利好兑现，择机逢低可加仓",
+        "actual": "",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
+        "expected": "",
         "actual": "",
         "review": ""
       }
