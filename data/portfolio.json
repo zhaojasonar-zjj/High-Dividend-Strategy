@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-01T14:02:54.971Z",
+  "savedAt": "2026-08-01T14:03:04.370Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -354,7 +354,7 @@
       },
       {
         "date": "2026-8-1",
-        "stock": "",
+        "stock": "菜百股份",
         "action": "",
         "basis": "",
         "emotion": "",
