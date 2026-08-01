@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-01T01:57:39.534Z",
+  "savedAt": "2026-08-01T01:57:43.906Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -357,7 +357,7 @@
       "9": 4,
       "10": 5
     },
-    "questPeriod": "2026年7月半月",
+    "questPeriod": "2026年7月下半月",
     "history": [
       {
         "period": "2026Q2",
