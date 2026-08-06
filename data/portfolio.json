@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-06T14:58:10.629Z",
+  "savedAt": "2026-08-06T14:59:03.967Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -399,6 +399,16 @@
         "basis": "持股6.86%民营股东计划大宗减持不超过1.86%",
         "emotion": "",
         "expected": "逢低挂单分批建仓，绝不追涨",
+        "actual": "",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
+        "expected": "",
         "actual": "",
         "review": ""
       }
