@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-06T02:29:23.928Z",
+  "savedAt": "2026-08-06T03:17:04.844Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -141,14 +141,16 @@
       "luzhoulaojiao",
       "wuliangye",
       "pinganyinhang",
-      "s_mrydz8m2"
+      "s_mrydz8m2",
+      "s_msgy30gi"
     ],
     "stockNames": {
       "zhoudasheng": "周大生",
       "luzhoulaojiao": "泸州老窖",
       "wuliangye": "五粮液",
       "pinganyinhang": "中国平安",
-      "s_mrydz8m2": "菜百股份"
+      "s_mrydz8m2": "菜百股份",
+      "s_msgy30gi": "无锡银行"
     },
     "s_mrydz8m2": {
       "nextCheck": "8月26日半年报",
@@ -170,6 +172,20 @@
           "up": "5%",
           "down": "10%",
           "note": "逢涨减仓，总有再次机会"
+        }
+      ]
+    },
+    "s_msgy30gi": {
+      "nextCheck": "",
+      "rows": [
+        {
+          "date": "",
+          "event": "",
+          "prior": "",
+          "lr": "",
+          "up": "",
+          "down": "",
+          "note": ""
         }
       ]
     }
