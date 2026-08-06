@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-06T03:17:16.998Z",
+  "savedAt": "2026-08-06T03:17:26.306Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -180,7 +180,7 @@
       "rows": [
         {
           "date": "2026-8-6",
-          "event": "",
+          "event": "持股",
           "prior": "",
           "lr": "",
           "up": "",
