@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-06T03:22:37.930Z",
+  "savedAt": "2026-08-06T03:22:47.580Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -206,7 +206,8 @@
     },
     "600908": {
       "static_div": "0.24",
-      "dynamic_div": "稳略升"
+      "dynamic_div": "稳略升",
+      "position": "1%"
     },
     "601318": {
       "dynamic_div": "稳并略增",
