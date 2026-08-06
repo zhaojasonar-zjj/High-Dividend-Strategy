@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-06T14:59:09.801Z",
+  "savedAt": "2026-08-06T14:59:17.188Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -404,7 +404,7 @@
       },
       {
         "date": "2026-8-6",
-        "stock": "",
+        "stock": "周大生等",
         "action": "",
         "basis": "",
         "emotion": "",
