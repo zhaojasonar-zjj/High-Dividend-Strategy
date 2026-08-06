@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-06T03:18:59.858Z",
+  "savedAt": "2026-08-06T03:19:28.651Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -176,7 +176,7 @@
       ]
     },
     "s_msgy30gi": {
-      "nextCheck": "",
+      "nextCheck": "8月27日半年报",
       "rows": [
         {
           "date": "2026-8-6",
