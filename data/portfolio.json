@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-06T03:25:14.853Z",
+  "savedAt": "2026-08-06T03:26:02.182Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -389,7 +389,7 @@
         "action": "逢利空（非基本面性质）逢跌建仓沪市打新门票",
         "basis": "持股6.86%民营股东计划大宗减持不超过1.86%",
         "emotion": "",
-        "expected": "",
+        "expected": "逢低挂单分批建仓，绝不追涨",
         "actual": "",
         "review": ""
       }
