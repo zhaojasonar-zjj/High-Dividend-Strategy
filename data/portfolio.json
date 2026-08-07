@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-07T01:10:43.630Z",
+  "savedAt": "2026-08-07T01:43:53.910Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -409,6 +409,16 @@
         "basis": "中国黄金协会披露上半年黄金产销量数据",
         "emotion": "1",
         "expected": "降低预期，禁止加仓，逢涨、逢高可考虑减仓",
+        "actual": "",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
+        "expected": "",
         "actual": "",
         "review": ""
       }
