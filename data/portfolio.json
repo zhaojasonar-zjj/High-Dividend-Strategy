@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-07T01:44:03.497Z",
+  "savedAt": "2026-08-07T01:44:21.383Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -416,7 +416,7 @@
         "date": "2026-8-7",
         "stock": "五粮液",
         "action": "",
-        "basis": "",
+        "basis": "8月6日，新闻报道普五批价上涨",
         "emotion": "",
         "expected": "",
         "actual": "",
