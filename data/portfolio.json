@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-07T01:44:51.751Z",
+  "savedAt": "2026-08-07T01:44:58.766Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -417,7 +417,7 @@
         "stock": "五粮液",
         "action": "事后投资，分红资金复投五粮液",
         "basis": "8月6日，新闻报道普五批价上涨",
-        "emotion": "",
+        "emotion": "3",
         "expected": "",
         "actual": "",
         "review": ""
