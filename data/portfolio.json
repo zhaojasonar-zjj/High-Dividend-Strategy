@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-10T15:34:16.443Z",
+  "savedAt": "2026-08-14T02:49:59.458Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -437,6 +437,16 @@
         "emotion": "3",
         "expected": "不预测短期股价，市价买入",
         "actual": "集合竞价买入1%，回调后再买入2%",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
+        "expected": "",
+        "actual": "",
         "review": ""
       }
     ],
