@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-14T02:50:22.627Z",
+  "savedAt": "2026-08-14T02:50:49.143Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "下一次现金流/中报数据",
@@ -442,7 +442,7 @@
       {
         "date": "2026-814",
         "stock": "分红",
-        "action": "",
+        "action": "8月底前，泸州老窖分红",
         "basis": "",
         "emotion": "",
         "expected": "",
