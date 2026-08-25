@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-25T15:22:39.421Z",
+  "savedAt": "2026-08-25T15:22:43.645Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -111,7 +111,7 @@
         },
         {
           "date": "2026-8-25",
-          "event": "",
+          "event": "半年报",
           "prior": "",
           "lr": "",
           "up": "",
