@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-25T16:11:26.504Z",
+  "savedAt": "2026-08-25T16:15:24.719Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -492,6 +492,16 @@
         "basis": "白酒处于\"价格底已确认、库存底分化中、业绩底未至\"的磨底中后段；反转是W型磨底后的U型爬升",
         "emotion": "1",
         "expected": "股息再投资泸州老窖、五粮液，坚持到2027Q2",
+        "actual": "",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
+        "expected": "",
         "actual": "",
         "review": ""
       }
