@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-25T16:17:47.009Z",
+  "savedAt": "2026-08-25T16:18:57.897Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -501,7 +501,7 @@
         "action": "分红减少，降低目标价到12.5~13元，11.7元可分红再投资",
         "basis": "半年报",
         "emotion": "1",
-        "expected": "",
+        "expected": "熊市股利再投资，坚持到2026年12月份",
         "actual": "",
         "review": ""
       }
