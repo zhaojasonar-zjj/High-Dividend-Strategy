@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-25T15:56:22.382Z",
+  "savedAt": "2026-08-25T16:00:52.289Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -275,7 +275,7 @@
       "quasi_cash": "9.5",
       "capex_ttm": "1",
       "ocf_ttm": "2.6",
-      "dynamic_div": "稳",
+      "dynamic_div": "中期分红下降",
       "position": "70%"
     },
     "000568": {
