@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-25T16:15:49.879Z",
+  "savedAt": "2026-08-25T16:15:57.832Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -499,7 +499,7 @@
         "date": "2026-8-25",
         "stock": "周大生",
         "action": "",
-        "basis": "",
+        "basis": "半年报",
         "emotion": "",
         "expected": "",
         "actual": "",
