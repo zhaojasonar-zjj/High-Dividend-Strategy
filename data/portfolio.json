@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-25T15:34:03.840Z",
+  "savedAt": "2026-08-25T15:34:44.662Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -189,7 +189,7 @@
       "s_msgy30gi": "无锡银行"
     },
     "s_mrydz8m2": {
-      "nextCheck": "8月26日半年报",
+      "nextCheck": "10月份三季报",
       "rows": [
         {
           "date": "2026-7-24",
