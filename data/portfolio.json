@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-25T16:18:57.897Z",
+  "savedAt": "2026-08-25T16:19:06.152Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -502,6 +502,16 @@
         "basis": "半年报",
         "emotion": "1",
         "expected": "熊市股利再投资，坚持到2026年12月份",
+        "actual": "",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
+        "expected": "",
         "actual": "",
         "review": ""
       }
