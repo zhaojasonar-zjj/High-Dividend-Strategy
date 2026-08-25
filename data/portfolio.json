@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-25T16:19:21.265Z",
+  "savedAt": "2026-08-25T16:20:07.410Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -508,7 +508,7 @@
       {
         "date": "2026-8-25",
         "stock": "泸州老窖",
-        "action": "",
+        "action": "2026年净利润约65亿元（业绩底）",
         "basis": "半年报",
         "emotion": "",
         "expected": "",
