@@ -9,7 +9,7 @@
     "costRate": 0.04,
     "riskPremium": 0.02,
     "actualEPS1": 0.92,
-    "actualPayout1": 0.8855
+    "actualPayout1": 0.88
   },
   "scenarios": [
     {
@@ -79,5 +79,5 @@
       "note": "行业复苏，品牌使用费涨价，自营电商稳增"
     }
   ],
-  "lastUpdated": "2026-08-26T15:40:49.862Z"
+  "lastUpdated": "2026-08-26T15:41:01.155Z"
 }
