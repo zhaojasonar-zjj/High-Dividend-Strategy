@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-26T04:16:56.177Z",
+  "savedAt": "2026-08-26T04:17:19.626Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -276,7 +276,8 @@
       "ocf_ttm": "2.6",
       "dynamic_div": "中期分红下降",
       "position": "70%",
-      "report_date": "2026Q2"
+      "report_date": "2026Q2",
+      "liability": "21.99"
     },
     "000568": {
       "static_div": "5.78",
