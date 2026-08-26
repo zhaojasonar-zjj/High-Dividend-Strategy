@@ -507,6 +507,34 @@
     font-family: 'Courier New', monospace;
   }
 
+  /* Fund data notes */
+  .fund-notes {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--text-muted);
+  }
+  .fund-notes-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .fund-notes-section {
+    margin-bottom: 4px;
+  }
+  .fund-notes-label {
+    font-weight: 600;
+    color: var(--text);
+  }
+  .fund-notes-text {
+    color: var(--text-muted);
+  }
+
   /* Discipline system */
   .discipline-panel {
     margin-top: 16px;
@@ -1120,7 +1148,7 @@
             <table class="fund-table" id="fund-table">
               <thead id="fund-thead"></thead>
               <tbody id="fund-tbody">
-                <tr><td colspan="21" style="text-align:center;color:var(--text-muted);padding:20px;">点击「刷新基本面」获取数据</td></tr>
+                <tr><td colspan="20" style="text-align:center;color:var(--text-muted);padding:20px;">点击「刷新基本面」获取数据</td></tr>
               </tbody>
             </table>
           </div>
@@ -1153,6 +1181,34 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- 数据备注 -->
+          <div class="fund-notes">
+            <div class="fund-notes-title">数据备注</div>
+            <div class="fund-notes-section">
+              <span class="fund-notes-label">① 腾讯财经接口数据：</span>
+              <span class="fund-notes-text">最新价（元）、总股本（股）、总市值（元）、PE(TTM)（倍）、PB（倍）</span>
+            </div>
+            <div class="fund-notes-section">
+              <span class="fund-notes-label">② 自动计算数据：</span>
+              <span class="fund-notes-text">
+                企业价值 = 总市值 + 负债合计 − 类货币资金（元）、
+                PCF(TTM) = 总市值 ÷ 经营现金流(TTM)（倍）、
+                自由现金流 = 经营现金流(TTM) − 资本支出(TTM)（亿）、
+                自由现金流率 = 企业价值 ÷ 自由现金流（倍）、
+                股息率 = 静态分红 ÷ 最新价 × 100%（%）
+              </span>
+            </div>
+            <div class="fund-notes-section">
+              <span class="fund-notes-label">③ 人工填写数据：</span>
+              <span class="fund-notes-text">
+                报告期（文本，如"2026中报"）、负债合计（亿）、
+                经营现金流(TTM)（亿）= 经营活动现金净流量(TTM)、
+                资本支出(TTM)（亿）= 购建固定无形长期资产支付的现金(TTM)、
+                类货币资金（亿）、静态分红（元/股）、动态分红（元/股）、仓位（%）
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -2064,11 +2120,11 @@ function toggleAutoRefresh() {
   }
 }
 
-// ============ Fundamental Data (Eastmoney datacenter) ============
+// ============ Fundamental Data (Tencent API) ============
 const FUND_EDIT_KEY = 'portfolio_fund_edits';
 let fundExpanded = false;
-let fundData = {};        // code -> { valuation, finance }
-let fundEdits = {};       // code -> { ocf_ttm, capex_ttm, quasi_cash, static_div, dynamic_div, position }
+let fundData = {};        // code -> { price, name, totalShares, totalMv, peTtm, pb }
+let fundEdits = {};       // code -> { report_date, liability, ocf_ttm, capex_ttm, quasi_cash, static_div, dynamic_div, position }
 
 // Load saved editable values
 function loadFundEdits() {
@@ -2180,78 +2236,8 @@ function setFundStatus(text, state) {
   dot.className = 'dot' + (state === 'off' ? ' off' : state === 'err' ? ' err' : state === 'loading' ? ' loading' : '');
 }
 
-// ---- Valuation: close price, total shares, market cap, PE, PB, PCF (batch) ----
-async function fetchValuation(codes) {
-  if (codes.length === 0) return {};
-  const inList = codes.map(c => '"' + c + '"').join(',');
-  const url = 'https://datacenter-web.eastmoney.com/api/data/v1/get'
-    + '?sortColumns=TRADE_DATE&sortTypes=-1&pageSize=100&pageNumber=1'
-    + '&reportName=RPT_VALUEANALYSIS_DET'
-    + '&columns=SECURITY_CODE,SECURITY_NAME_ABBR,CLOSE_PRICE,TOTAL_MARKET_CAP,TOTAL_SHARES,PE_TTM,PB_MRQ,PCF_OCF_TTM,TRADE_DATE'
-    + '&filter=(SECURITY_CODE in(' + inList + '))';
-  const resp = await fetch(url);
-  const data = await resp.json();
-  if (!data.success || !data.result) return {};
-  const map = {};
-  data.result.data.forEach(r => {
-    if (!map[r.SECURITY_CODE] || new Date(r.TRADE_DATE) > new Date(map[r.SECURITY_CODE].TRADE_DATE)) {
-      map[r.SECURITY_CODE] = r;
-    }
-  });
-  return map;
-}
-
-// ---- Finance: report date, total liability, parent net profit (per code) ----
-async function fetchFinance(code) {
-  const url = 'https://datacenter-web.eastmoney.com/api/data/v1/get'
-    + '?sortColumns=REPORT_DATE&sortTypes=-1&pageSize=1&pageNumber=1'
-    + '&reportName=RPT_F10_FINANCE_MAINFINADATA'
-    + '&columns=SECURITY_CODE,SECURITY_NAME_ABBR,REPORT_DATE,REPORT_DATE_NAME,LIABILITY,PARENTNETPROFIT'
-    + '&filter=(SECURITY_CODE="' + code + '")';
-  const resp = await fetch(url);
-  const data = await resp.json();
-  if (!data.success || !data.result || data.result.data.length === 0) return null;
-  return data.result.data[0];
-}
-
-async function fetchFundamentals() {
-  if (quoteCodes.length === 0) {
-    setFundStatus('无股票代码，请先在行情表添加', 'off');
-    return;
-  }
-  setFundStatus('正在获取基本面数据…', 'loading');
-  fundData = {};
-  try {
-    const [valMap, realTimePrices] = await Promise.all([
-      fetchValuation(quoteCodes),
-      fetchRealTimePrices(quoteCodes)
-    ]);
-    // Override CLOSE_PRICE with real-time price
-    quoteCodes.forEach(c => {
-      if (realTimePrices[c] != null && valMap[c]) {
-        valMap[c].CLOSE_PRICE = realTimePrices[c];
-      }
-    });
-    const finPromises = quoteCodes.map(c => fetchFinance(c).catch(() => null));
-    const finResults = await Promise.all(finPromises);
-    const finMap = {};
-    quoteCodes.forEach((c, i) => { if (finResults[i]) finMap[c] = finResults[i]; });
-    quoteCodes.forEach(c => {
-      fundData[c] = {
-        valuation: valMap[c] || null,
-        finance: finMap[c] || null
-      };
-    });
-    renderFundTable();
-    const now = new Date();
-    setFundStatus('最后更新: ' + now.toLocaleString('zh-CN'), 'on');
-  } catch(e) {
-    setFundStatus('获取基本面数据失败: ' + e.message, 'err');
-  }
-}
-
-// Fetch real-time prices from Tencent API (same source as quote table)
-async function fetchRealTimePrices(codes) {
+// ---- Fetch all data from Tencent API (price, name, shares, market cap, PE, PB) ----
+async function fetchTencentData(codes) {
   const tencentCodes = codes.map(tencentCode).join(',');
   const resp = await fetch('https://qt.gtimg.cn/q=' + tencentCodes);
   const buf = await resp.arrayBuffer();
@@ -2266,9 +2252,42 @@ async function fetchRealTimePrices(codes) {
     if (parts.length < 50) return;
     const code = parts[2];
     const price = parseFloat(parts[3]);
-    if (!isNaN(price) && price > 0) map[code] = price;
+    if (isNaN(price) || price <= 0) return;
+    const name       = parts[1] || '';
+    const peTtm     = parseFloat(parts[39]);
+    const pb         = parseFloat(parts[46]);
+    const totalMvYi = parseFloat(parts[44]); // in 亿
+    const totalShares = parseFloat(parts[73]);
+    map[code] = {
+      price: price,
+      name: name,
+      totalShares: !isNaN(totalShares) ? totalShares : null,
+      totalMv: !isNaN(totalMvYi) ? totalMvYi * 1e8 : null, // convert 亿 → 元
+      peTtm: !isNaN(peTtm) ? peTtm : null,
+      pb: !isNaN(pb) ? pb : null,
+    };
   });
   return map;
+}
+
+async function fetchFundamentals() {
+  if (quoteCodes.length === 0) {
+    setFundStatus('无股票代码，请先在行情表添加', 'off');
+    return;
+  }
+  setFundStatus('正在获取基本面数据…', 'loading');
+  fundData = {};
+  try {
+    const tencentMap = await fetchTencentData(quoteCodes);
+    quoteCodes.forEach(c => {
+      fundData[c] = tencentMap[c] || null;
+    });
+    renderFundTable();
+    const now = new Date();
+    setFundStatus('最后更新: ' + now.toLocaleString('zh-CN'), 'on');
+  } catch(e) {
+    setFundStatus('获取基本面数据失败: ' + e.message, 'err');
+  }
 }
 
 // ---- Number formatting helpers ----
@@ -2307,7 +2326,7 @@ function renderFundTable() {
   const tbody = document.getElementById('fund-tbody');
   if (quoteCodes.length === 0) {
     thead.innerHTML = '';
-    tbody.innerHTML = '<tr><td colspan="21" style="text-align:center;color:var(--text-muted);padding:20px;">无数据</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="20" style="text-align:center;color:var(--text-muted);padding:20px;">无数据</td></tr>';
     return;
   }
 
@@ -2317,7 +2336,7 @@ function renderFundTable() {
     + '<th rowspan="2">代码</th><th rowspan="2">名称</th>'
     + '<th colspan="4">市值</th>'
     + '<th colspan="5">估值</th>'
-    + '<th colspan="7">财务</th>'
+    + '<th colspan="6">财务</th>'
     + '<th colspan="2">分红</th>'
     + '<th rowspan="2">仓位</th>'
     + '</tr>';
@@ -2326,8 +2345,8 @@ function renderFundTable() {
     + '<th>最新价</th><th>总股本</th><th>总市值</th><th>企业价值</th>'
     // 估值 (5)
     + '<th>PE(TTM)</th><th>PB</th><th>PCF(TTM)</th><th>自由现金流率</th><th>股息率</th>'
-    // 财务 (7)
-    + '<th>报告期</th><th>负债合计</th><th>归母净利润</th><th>经营现金流(TTM)</th><th>资本支出(TTM)</th><th>自由现金流</th><th>类货币资金</th>'
+    // 财务 (6)
+    + '<th>报告期</th><th>负债合计</th><th>经营现金流(TTM)</th><th>资本支出(TTM)</th><th>自由现金流</th><th>类货币资金</th>'
     // 分红 (2)
     + '<th>静态分红</th><th>动态分红</th>'
     + '</tr>';
@@ -2336,40 +2355,42 @@ function renderFundTable() {
   let bodyHtml = '';
   quoteCodes.forEach(code => {
     const d = fundData[code] || {};
-    const v = d.valuation || {};
-    const f = d.finance || {};
-    const name = v.SECURITY_NAME_ABBR || f.SECURITY_NAME_ABBR || '—';
+    const name = d.name || '—';
 
-    // API values
-    const closePrice  = v.CLOSE_PRICE || null;
-    const totalShares = v.TOTAL_SHARES || null;
-    const totalMv     = v.TOTAL_MARKET_CAP || null;
-    const peTtm       = v.PE_TTM || null;
-    const pbMrq       = v.PB_MRQ || null;
-    const pcfTtm      = v.PCF_OCF_TTM || null;
-    const reportDate  = f.REPORT_DATE_NAME || (f.REPORT_DATE ? f.REPORT_DATE.substring(0,10) : '—');
-    const liability   = f.LIABILITY || null;
-    const parentNP    = f.PARENTNETPROFIT || null;
+    // Tencent API values
+    const closePrice  = d.price || null;
+    const totalShares = d.totalShares || null;
+    const totalMv     = d.totalMv || null;       // in 元
+    const peTtm       = d.peTtm || null;
+    const pb          = d.pb || null;
 
     // Editable values (stored in 亿 for large numbers, 元/股 for per-share)
-    const ocfTtmRaw    = getFundEdit(code, 'ocf_ttm');      // in 亿
-    const capexTtmRaw  = getFundEdit(code, 'capex_ttm');    // in 亿
-    const quasiCashRaw = getFundEdit(code, 'quasi_cash');   // in 亿
-    const staticDivRaw = getFundEdit(code, 'static_div');   // in 元/股
-    const dynamicDivRaw= getFundEdit(code, 'dynamic_div');  // in 元/股
-    const positionRaw  = getFundEdit(code, 'position');     // text
+    const reportDateRaw  = getFundEdit(code, 'report_date');  // text
+    const liabilityRaw   = getFundEdit(code, 'liability');    // in 亿
+    const ocfTtmRaw      = getFundEdit(code, 'ocf_ttm');      // in 亿
+    const capexTtmRaw    = getFundEdit(code, 'capex_ttm');    // in 亿
+    const quasiCashRaw   = getFundEdit(code, 'quasi_cash');   // in 亿
+    const staticDivRaw   = getFundEdit(code, 'static_div');   // in 元/股
+    const dynamicDivRaw  = getFundEdit(code, 'dynamic_div');  // in 元/股
+    const positionRaw    = getFundEdit(code, 'position');     // text
 
-    // Calculated values
-    const ocfTtm    = parseNumRaw(ocfTtmRaw);      // 亿
-    const capexTtm  = parseNumRaw(capexTtmRaw);    // 亿
-    const quasiCash = parseNumRaw(quasiCashRaw);   // 亿
-    const staticDiv = parseNumRaw(staticDivRaw);   // 元/股
+    // Parsed numbers
+    const liability  = parseNumRaw(liabilityRaw);   // 亿
+    const ocfTtm     = parseNumRaw(ocfTtmRaw);      // 亿
+    const capexTtm   = parseNumRaw(capexTtmRaw);    // 亿
+    const quasiCash  = parseNumRaw(quasiCashRaw);   // 亿
+    const staticDiv  = parseNumRaw(staticDivRaw);   // 元/股
 
-    // 企业价值 = 总市值 + 负债合计 - 类货币资金 (all in 元)
+    // 企业价值 = 总市值 + 负债合计 - 类货币资金 (totalMv in 元, liability/quasiCash in 亿 → convert)
     let ev = null;
     if (totalMv !== null && liability !== null) {
-      ev = totalMv + liability;
-      if (quasiCash !== null) ev -= quasiCash * 1e8; // convert 亿 to 元
+      ev = totalMv + liability * 1e8;
+      if (quasiCash !== null) ev -= quasiCash * 1e8;
+    }
+    // PCF(TTM) = 总市值 / 经营现金流(TTM) (totalMv in 元, ocfTtm in 亿 → convert)
+    let pcfTtm = null;
+    if (totalMv !== null && ocfTtm !== null && ocfTtm !== 0) {
+      pcfTtm = totalMv / (ocfTtm * 1e8);
     }
     // 自由现金流 = 经营现金流TTM - 资本支出TTM (in 亿)
     let fcf = null;
@@ -2395,14 +2416,15 @@ function renderFundTable() {
       + '<td class="calc-cell">' + fmtBigNum(ev) + '</td>'
       // 估值 (5)
       + '<td>' + fmtNumRaw(peTtm) + '</td>'
-      + '<td>' + fmtNumRaw(pbMrq) + '</td>'
-      + '<td>' + fmtNumRaw(pcfTtm) + '</td>'
+      + '<td>' + fmtNumRaw(pb) + '</td>'
+      + '<td class="calc-cell">' + fmtNumRaw(pcfTtm) + '</td>'
       + '<td class="calc-cell">' + (fcfYield !== null ? fmtNumRaw(fcfYield) : '—') + '</td>'
       + '<td class="calc-cell">' + fmtPctRaw(divYield) + '</td>'
-      // 财务 (7)
-      + '<td>' + reportDate + '</td>'
-      + '<td>' + fmtBigNum(liability) + '</td>'
-      + '<td>' + fmtBigNum(parentNP) + '</td>'
+      // 财务 (6)
+      // editable: 报告期 text
+      + '<td contenteditable="true" data-edit="' + code + '|report_date" data-unit="">' + (reportDateRaw || '') + '</td>'
+      // editable: 负债合计 in 亿
+      + '<td contenteditable="true" data-edit="' + code + '|liability" data-unit="亿">' + (liabilityRaw || '') + '</td>'
       // editable: 经营现金流(TTM) in 亿
       + '<td contenteditable="true" data-edit="' + code + '|ocf_ttm" data-unit="亿">' + (ocfTtmRaw || '') + '</td>'
       // editable: 资本支出(TTM) in 亿
@@ -2450,23 +2472,26 @@ function renderFundTable() {
 }
 function recalcRow(code) {
   const d = fundData[code] || {};
-  const v = d.valuation || {};
-  const f = d.finance || {};
 
-  const closePrice  = v.CLOSE_PRICE || null;
-  const totalMv     = v.TOTAL_MARKET_CAP || null;
-  const liability   = f.LIABILITY || null;
+  const closePrice  = d.price || null;
+  const totalMv     = d.totalMv || null;
 
-  const ocfTtm    = parseNumRaw(getFundEdit(code, 'ocf_ttm'));
-  const capexTtm  = parseNumRaw(getFundEdit(code, 'capex_ttm'));
-  const quasiCash = parseNumRaw(getFundEdit(code, 'quasi_cash'));
-  const staticDiv = parseNumRaw(getFundEdit(code, 'static_div'));
+  const liability  = parseNumRaw(getFundEdit(code, 'liability'));   // 亿
+  const ocfTtm     = parseNumRaw(getFundEdit(code, 'ocf_ttm'));     // 亿
+  const capexTtm   = parseNumRaw(getFundEdit(code, 'capex_ttm'));   // 亿
+  const quasiCash  = parseNumRaw(getFundEdit(code, 'quasi_cash'));  // 亿
+  const staticDiv  = parseNumRaw(getFundEdit(code, 'static_div'));  // 元/股
 
-  // 企业价值
+  // 企业价值 = 总市值 + 负债合计 - 类货币资金 (totalMv in 元, liability/quasiCash in 亿)
   let ev = null;
   if (totalMv !== null && liability !== null) {
-    ev = totalMv + liability;
+    ev = totalMv + liability * 1e8;
     if (quasiCash !== null) ev -= quasiCash * 1e8;
+  }
+  // PCF(TTM) = 总市值 / 经营现金流(TTM)
+  let pcfTtm = null;
+  if (totalMv !== null && ocfTtm !== null && ocfTtm !== 0) {
+    pcfTtm = totalMv / (ocfTtm * 1e8);
   }
   // 自由现金流
   let fcf = null;
@@ -2479,17 +2504,18 @@ function recalcRow(code) {
   if (staticDiv !== null && closePrice !== null && closePrice !== 0) divYield = (staticDiv / closePrice) * 100;
 
   // Find the row and update calc cells
+  // Column layout (20 cols): 0=code, 1=name, 2=price, 3=shares, 4=mv, 5=EV(calc), 6=PE, 7=PB, 8=PCF(calc), 9=FCFyield(calc), 10=divYield(calc), 11=reportDate(edit), 12=liability(edit), 13=ocf(edit), 14=capex(edit), 15=fcf(calc), 16=quasiCash(edit), 17=staticDiv(edit), 18=dynamicDiv(edit), 19=position(edit)
   const rows = document.querySelectorAll('#fund-tbody tr');
   quoteCodes.forEach((c, idx) => {
     if (c !== code) return;
     const row = rows[idx];
     if (!row) return;
     const cells = row.querySelectorAll('td');
-    // Column layout: 0=code, 1=name, 2=price, 3=shares, 4=mv, 5=EV(calc), 6=PE, 7=PB, 8=PCF, 9=FCFyield(calc), 10=divYield(calc), 11=reportDate, 12=liability, 13=parentNP, 14=ocf(edit), 15=capex(edit), 16=fcf(calc), 17=quasiCash(edit), 18=staticDiv(edit), 19=dynamicDiv(edit), 20=position(edit)
     cells[5].textContent  = fmtBigNum(ev);
+    cells[8].textContent  = fmtNumRaw(pcfTtm);
     cells[9].textContent  = fcfYield !== null ? fmtNumRaw(fcfYield) : '—';
     cells[10].textContent = fmtPctRaw(divYield);
-    cells[16].textContent = fcf !== null ? fmtNumRaw(fcf) : '—';
+    cells[15].textContent = fcf !== null ? fmtNumRaw(fcf) : '—';
   });
   renderPortfolioValuation();
 }
@@ -2509,26 +2535,28 @@ function renderPortfolioValuation() {
   const stocks = [];
   quoteCodes.forEach(code => {
     const d = fundData[code] || {};
-    const v = d.valuation || {};
-    const f = d.finance || {};
-    const closePrice = v.CLOSE_PRICE || null;
-    const totalMv    = v.TOTAL_MARKET_CAP || null;
-    const peTtm      = v.PE_TTM || null;
-    const pbMrq      = v.PB_MRQ || null;
-    const pcfTtm     = v.PCF_OCF_TTM || null;
-    const liability  = f.LIABILITY || null;
+    const closePrice = d.price || null;
+    const totalMv    = d.totalMv || null;
+    const peTtm      = d.peTtm || null;
+    const pb          = d.pb || null;
 
-    const ocfTtm    = parseNumRaw(getFundEdit(code, 'ocf_ttm'));
-    const capexTtm  = parseNumRaw(getFundEdit(code, 'capex_ttm'));
-    const quasiCash = parseNumRaw(getFundEdit(code, 'quasi_cash'));
-    const staticDiv = parseNumRaw(getFundEdit(code, 'static_div'));
+    const liability  = parseNumRaw(getFundEdit(code, 'liability'));   // 亿
+    const ocfTtm     = parseNumRaw(getFundEdit(code, 'ocf_ttm'));     // 亿
+    const capexTtm   = parseNumRaw(getFundEdit(code, 'capex_ttm'));   // 亿
+    const quasiCash  = parseNumRaw(getFundEdit(code, 'quasi_cash'));  // 亿
+    const staticDiv  = parseNumRaw(getFundEdit(code, 'static_div'));  // 元/股
     const positionRaw = getFundEdit(code, 'position');
 
     // EV
     let ev = null;
     if (totalMv !== null && liability !== null) {
-      ev = totalMv + liability;
+      ev = totalMv + liability * 1e8;
       if (quasiCash !== null) ev -= quasiCash * 1e8;
+    }
+    // PCF(TTM) = 总市值 / 经营现金流(TTM)
+    let pcfTtm = null;
+    if (totalMv !== null && ocfTtm !== null && ocfTtm !== 0) {
+      pcfTtm = totalMv / (ocfTtm * 1e8);
     }
     // FCF (亿)
     let fcf = null;
@@ -2548,7 +2576,7 @@ function renderPortfolioValuation() {
       if (posWeight !== null && posWeight > 0) hasPosition = true;
     }
 
-    stocks.push({ code, peTtm, pbMrq, pcfTtm, fcfYield, divYield, posWeight, totalMv });
+    stocks.push({ code, peTtm, pb, pcfTtm, fcfYield, divYield, posWeight, totalMv });
   });
 
   // Determine weights
@@ -2594,7 +2622,7 @@ function renderPortfolioValuation() {
   }
 
   const peArr  = stocks.map(x => x.peTtm);
-  const pbArr  = stocks.map(x => x.pbMrq);
+  const pbArr  = stocks.map(x => x.pb);
   const pcfArr = stocks.map(x => x.pcfTtm);
   const fcfArr = stocks.map(x => x.fcfYield);
   const divArr = stocks.map(x => x.divYield);
