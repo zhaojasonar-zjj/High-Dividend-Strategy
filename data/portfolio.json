@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-26T04:17:19.626Z",
+  "savedAt": "2026-08-26T04:17:42.676Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -297,7 +297,7 @@
       "ocf_ttm": "113.2",
       "position": "7%",
       "report_date": "2026Q1",
-      "liability": ""
+      "liability": "681.6"
     }
   },
   "notes": {
