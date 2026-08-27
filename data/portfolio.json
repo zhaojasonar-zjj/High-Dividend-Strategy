@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-27T06:41:50.351Z",
+  "savedAt": "2026-08-27T06:42:05.009Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -571,6 +571,15 @@
         "consistency": 4.5,
         "total": 4.55,
         "status": "✅ 正常"
+      },
+      {
+        "period": "2026年8月下半月",
+        "discipline": 4.67,
+        "emotion": 3,
+        "bias": 4,
+        "consistency": 2,
+        "total": 3.46,
+        "status": "⚠ 黄灯"
       }
     ]
   },
