@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-27T02:26:56.436Z",
+  "savedAt": "2026-08-27T06:39:35.875Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -534,7 +534,7 @@
       "9": 4,
       "10": 5
     },
-    "questPeriod": "2026年8月上半月",
+    "questPeriod": "2026年8月下半月",
     "history": [
       {
         "period": "2026Q2",
