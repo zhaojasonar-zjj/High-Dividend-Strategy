@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-27T07:30:24.011Z",
+  "savedAt": "2026-08-27T07:30:57.880Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -221,7 +221,7 @@
       ]
     },
     "s_msgy30gi": {
-      "nextCheck": "8月27日半年报",
+      "nextCheck": "10月三季报和中期分红方案",
       "rows": [
         {
           "date": "2026-8-6",
