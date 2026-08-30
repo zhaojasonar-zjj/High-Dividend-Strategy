@@ -2,8 +2,8 @@
   "data": {
     "macro_1_data": "少量城市房价复苏/828房地产新政发布",
     "macro_1_thresh": "",
-    "macro_1_assess": "政策制度性拐点/",
-    "macro_1_signal": "未设置",
+    "macro_1_assess": "政策制度性拐点",
+    "macro_1_signal": "观察",
     "macro_1_op": "",
     "macro_2_data": "",
     "macro_2_thresh": "",
@@ -198,6 +198,6 @@
     "ce_34": "洋河股份",
     "ce_35": "其他"
   },
-  "savedAt": "2026-08-30T13:19:26.560Z",
+  "savedAt": "2026-08-30T13:19:38.096Z",
   "model": "baijiu_cycle"
 }
