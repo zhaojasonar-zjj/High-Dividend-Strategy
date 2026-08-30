@@ -1,6 +1,6 @@
 {
   "data": {
-    "macro_1_data": "",
+    "macro_1_data": "828房地产新政发布",
     "macro_1_thresh": "",
     "macro_1_assess": "",
     "macro_1_signal": "未设置",
@@ -198,6 +198,6 @@
     "ce_34": "洋河股份",
     "ce_35": "其他"
   },
-  "savedAt": "2026-08-30T13:16:51.100Z",
+  "savedAt": "2026-08-30T13:17:45.079Z",
   "model": "baijiu_cycle"
 }
