@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-08-31T13:54:33.899Z",
+  "savedAt": "2026-10-20T11:35:55.117Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -536,6 +536,16 @@
         "emotion": "1",
         "expected": "业绩拐点2026Q4~2027Q1，坚持到2027Q2",
         "actual": "8月28日分红再投资周大生约11.07元",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
+        "expected": "",
+        "actual": "",
         "review": ""
       }
     ],
