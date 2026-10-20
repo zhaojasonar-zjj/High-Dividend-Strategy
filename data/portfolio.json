@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-10-20T11:37:27.753Z",
+  "savedAt": "2026-10-20T11:38:04.611Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -544,7 +544,7 @@
         "action": "10月22日分红0.16元/股到账，机械化分红再投资（纪律）",
         "basis": "高股息策略，分红再投资",
         "emotion": "1",
-        "expected": "",
+        "expected": "均价策略，不在乎成交价",
         "actual": "",
         "review": ""
       }
