@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-10-20T11:39:15.999Z",
+  "savedAt": "2026-10-22T06:21:32.774Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -545,7 +545,7 @@
         "basis": "高股息策略，分红再投资",
         "emotion": "1",
         "expected": "均价策略，不在乎成交价",
-        "actual": "",
+        "actual": "分红复投周大生成交价约10.06元",
         "review": ""
       }
     ],
