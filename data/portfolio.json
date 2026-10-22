@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-10-22T06:23:39.720Z",
+  "savedAt": "2026-10-22T06:23:46.275Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -550,7 +550,7 @@
       },
       {
         "date": "2026-10-22",
-        "stock": "",
+        "stock": "泸州老窖",
         "action": "",
         "basis": "",
         "emotion": "",
