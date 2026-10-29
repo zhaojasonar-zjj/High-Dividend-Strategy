@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-10-29T16:06:14.465Z",
+  "savedAt": "2026-10-29T16:06:42.567Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -564,7 +564,7 @@
         "action": "绝不低价（约70元）出筹码；约77部分机动仓逢涨（逢高挂单）减",
         "basis": "产业资本（大股东）增持底70-72元",
         "emotion": "",
-        "expected": "",
+        "expected": "正价差",
         "actual": "",
         "review": ""
       }
