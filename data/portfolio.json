@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-10-29T16:02:06.156Z",
+  "savedAt": "2026-10-29T16:02:25.138Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -561,7 +561,7 @@
       {
         "date": "2026-10-30",
         "stock": "五粮液",
-        "action": "",
+        "action": "大股东增持底",
         "basis": "",
         "emotion": "",
         "expected": "",
