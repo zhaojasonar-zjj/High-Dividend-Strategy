@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-10-29T16:12:10.859Z",
+  "savedAt": "2026-10-29T16:12:15.561Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -574,7 +574,7 @@
         "action": "预估2027年DPS0.7-0.8，逢跌10元附近加仓，持股满一年后约11.3元机动仓减，降低单一重仓仓位",
         "basis": "三季报",
         "emotion": "",
-        "expected": "",
+        "expected": "正价差",
         "actual": "",
         "review": ""
       }
