@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-10-29T16:08:16.796Z",
+  "savedAt": "2026-10-29T16:09:46.208Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -571,7 +571,7 @@
       {
         "date": "2026-10-30",
         "stock": "周大生",
-        "action": "",
+        "action": "预估2027年DPS0.7-0.8，逢跌10元附近加仓，",
         "basis": "三季报",
         "emotion": "",
         "expected": "",
