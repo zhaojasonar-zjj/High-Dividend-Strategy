@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-10-29T16:07:30.365Z",
+  "savedAt": "2026-10-29T16:07:54.322Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -565,6 +565,16 @@
         "basis": "产业资本（大股东）增持底70-72元",
         "emotion": "",
         "expected": "正价差",
+        "actual": "",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
+        "expected": "",
         "actual": "",
         "review": ""
       }
