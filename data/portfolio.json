@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-10-22T06:28:29.594Z",
+  "savedAt": "2026-10-29T16:01:49.382Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -555,6 +555,16 @@
         "basis": "股价68元，市值1000亿，保守考虑周期底部净利润65亿元/分红52亿元，股息率5.2%。2025/10-2026/10股价打对折，与洋河股份对齐",
         "emotion": "1",
         "expected": "持股不动，择机加仓",
+        "actual": "",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
+        "expected": "",
         "actual": "",
         "review": ""
       }
