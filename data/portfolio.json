@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-10-30T02:56:38.662Z",
+  "savedAt": "2026-10-30T02:57:19.334Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -292,7 +292,7 @@
       "quasi_cash": "5.9",
       "capex_ttm": "0.85",
       "ocf_ttm": "4.8",
-      "dynamic_div": "中期分红下降",
+      "dynamic_div": "维持高派息率，利润降分红降",
       "position": "71%",
       "report_date": "2026Q3",
       "liability": "17.7"
