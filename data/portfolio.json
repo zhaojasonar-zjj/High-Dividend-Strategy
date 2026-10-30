@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-10-30T02:55:30.414Z",
+  "savedAt": "2026-10-30T02:55:47.846Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -299,7 +299,7 @@
     },
     "000568": {
       "static_div": "5.78",
-      "quasi_cash": "172",
+      "quasi_cash": "231",
       "capex_ttm": "17.5",
       "ocf_ttm": "17.5",
       "position": "21%",
