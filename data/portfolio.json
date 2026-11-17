@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-11-17T14:28:25.794Z",
+  "savedAt": "2026-11-17T14:29:53.801Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -575,7 +575,7 @@
         "basis": "三季报",
         "emotion": "",
         "expected": "正价差",
-        "actual": "修补短板：延迟卖出",
+        "actual": "修补短板：延迟卖出（怕失去VS怕踏空）",
         "review": ""
       }
     ],
