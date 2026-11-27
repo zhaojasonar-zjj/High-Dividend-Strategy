@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-11-27T05:27:33.135Z",
+  "savedAt": "2026-11-27T05:27:41.820Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -579,7 +579,7 @@
         "review": ""
       },
       {
-        "date": "",
+        "date": "2026-11-27",
         "stock": "",
         "action": "",
         "basis": "",
