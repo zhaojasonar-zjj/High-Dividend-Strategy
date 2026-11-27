@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "savedAt": "2026-11-17T14:31:36.590Z",
+  "savedAt": "2026-11-27T05:27:33.135Z",
   "main": {
     "zhoudasheng": {
       "nextCheck": "三季报数据",
@@ -576,6 +576,16 @@
         "emotion": "",
         "expected": "正价差",
         "actual": "修补短板：延迟卖出（怕失去VS怕踏空），持股满1年，等11月30日红利低波指数入选的潜在利好期权",
+        "review": ""
+      },
+      {
+        "date": "",
+        "stock": "",
+        "action": "",
+        "basis": "",
+        "emotion": "",
+        "expected": "",
+        "actual": "",
         "review": ""
       }
     ],
